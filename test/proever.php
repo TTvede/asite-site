@@ -249,6 +249,29 @@ p('et klik-id, der ikke ser rigtigt ud, gemmes ikke', get_post_meta(502, '_as_kl
 $_COOKIE = [];
 saet();
 
+/* ---------- 8b. Forhåndshentning af skrifter og forfatterens adresse (0.1.2) ---------- */
+echo "8b. Skrifter og forfatter\n";
+@mkdir($GLOBALS['UPLOADS'] . '/fa-filer/fonts', 0777, true);
+file_put_contents($GLOBALS['UPLOADS'] . '/fa-filer/fonts/bree-400-latin.woff2', 'x');
+saet(['skrifter_forhaand' => "bree-400-latin.woff2\nfindes-ikke.woff2\n../../wp-config.php"]);
+ob_start(); Asite_Site_Html::skrifter_forhaand(); $pre = ob_get_clean();
+// Præcis den linje, husmodellens hm-grundlag.php skrev for samme fil (hm_skrifter_forhaand):
+p('skrift hentes straks – samme <link> som hm-grundlag gav',
+    trim($pre) === '<link rel="preload" href="/wp-content/uploads/fa-filer/fonts/bree-400-latin.woff2" as="font" type="font/woff2" crossorigin>');
+p('en fil, der ikke findes, giver ingen linje (ingen 404 på hver side)', substr_count($pre, '<link') === 1);
+saet(['skrifter_forhaand' => '/wp-content/uploads/fa-filer/fonts/bree-400-latin.woff2']);
+p('en fuld sti i uploads virker også', count(Asite_Site_Html::skrifter_adresser()) === 1);
+saet();
+p('intet sat: ingen forhåndshentning', Asite_Site_Html::skrifter_adresser() === []);
+
+saet(['forfatter_navn' => 'Timme Tvede', 'forfatter_titel' => 'Art director og indehaver', 'forfatter_url' => 'https://tvede.me/']);
+$GLOBALS['FORAELDER'][42] = 9; $GLOBALS['POST_FIELD']['9:post_name'] = 'wiki'; $GLOBALS['SIDE_ID'] = 42;
+$r = Asite_Site_Seo::rankmath_json_ld(['side' => ['@type' => 'WebPage', 'author' => []]]);
+p('forfatteren har sin egen adresse med (som HM_FORFATTER["url"])', ($r['asite_forfatter']['url'] ?? '') === 'https://tvede.me/'
+    && ($r['asite_forfatter']['jobTitle'] ?? '') === 'Art director og indehaver');
+unset($GLOBALS['FORAELDER'][42]);
+saet();
+
 /* ---------- 9. Overgangen ---------- */
 echo "9. Overgangen fra mu-plugins\n";
 p('pluginet er aktivt, når husmodellens mu-plugins er væk', !Asite_Site::i_overgang());

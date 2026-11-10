@@ -52,10 +52,12 @@ class Asite_Site_Admin {
             'inline_svg'        => !empty($p['inline_svg']),
             'scenelag'          => !empty($p['scenelag']),
             'global_styles_fra' => !empty($p['global_styles_fra']),
+            'skrifter_forhaand' => $tekst('skrifter_forhaand'),
             'faq_schema'        => !empty($p['faq_schema']),
             'altnavn'           => $linje('altnavn'),
             'forfatter_navn'    => $linje('forfatter_navn'),
             'forfatter_titel'   => $linje('forfatter_titel'),
+            'forfatter_url'     => esc_url_raw(trim($linje('forfatter_url'))),
             'forfatter_forael'  => trim($linje('forfatter_forael'), '/'),
             'dev_vaert'         => strtolower(preg_replace('#^https?://#', '', trim($linje('dev_vaert'), '/ '))),
             'gamle_adresser'    => $tekst('gamle_adresser'),
@@ -188,6 +190,11 @@ class Asite_Site_Admin {
                     <tr><th scope="row">WordPress-CSS i footeren</th><td>
                         <?php self::tjek('global_styles_fra', $s['global_styles_fra'], 'Fjern WordPress\' global-styles fra footeren',
                             'Breakdances Bloat Eliminator fjerner den kun i <code>&lt;head&gt;</code>; WordPress lægger den på igen i footeren (ca. 9 kB pr. side). Følger Breakdances egen indstilling, så der kun er ét sted at slå til og fra.'); ?></td></tr>
+                    <tr><th scope="row">Hent skrifter med det samme</th><td>
+                        <?php self::omraade('skrifter_forhaand', $s['skrifter_forhaand'], 3, "overskrift-600-latin.woff2"); ?>
+                        <p class="description">Skriftfiler, browseren skal hente straks (preload), én pr. linje – et filnavn fra sitets egne skrifter
+                        eller en adresse i mediebiblioteket. Bruges til overskriftens skrift, så teksten ikke skifter skrift og hopper, mens siden
+                        tegnes. <strong>Kun små filer</strong>: en stor skrift gør siden langsommere at vise. Filer, der ikke findes, springes over.</p></td></tr>
                 </table>
 
                 <h2 class="title">Søgemaskiner og schema</h2>
@@ -201,6 +208,7 @@ class Asite_Site_Admin {
                     <tr><th scope="row">Forfatter på artikler</th><td>
                         <?php self::felt('forfatter_navn', $s['forfatter_navn'], 24, 'Navn'); ?>
                         <?php self::felt('forfatter_titel', $s['forfatter_titel'], 24, 'Titel'); ?>
+                        <?php self::felt('forfatter_url', $s['forfatter_url'], 30, 'https://… (forfatterens egen side)'); ?>
                         <p class="description">Sider under forælderen
                         <?php self::felt('forfatter_forael', $s['forfatter_forael'], 10, 'wiki'); ?>
                         bliver <code>Article</code> med denne person som forfatter. Står navnet tomt, er virksomheden forfatter på alle sider.</p></td></tr>

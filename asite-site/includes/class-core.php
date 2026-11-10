@@ -31,11 +31,13 @@ class Asite_Site {
             'inline_svg'        => true,      // <img class="<præfiks>-svg"> → SVG-koden selv
             'scenelag'          => true,      // <præfiks>-lag får billedets filnavn som klasse
             'global_styles_fra'  => true,     // WordPress' global-styles i footeren (følger Breakdances Bloat Eliminator)
+            'skrifter_forhaand' => '',        // skriftfiler, der hentes med det samme (preload) – én pr. linje
             // SEO/schema (hm-schema)
             'faq_schema'        => true,      // FAQPage fra Breakdance-træet
             'altnavn'           => '',        // alternateName på virksomheden (gammelt firmanavn/domæne)
             'forfatter_navn'    => '',        // navngiven forfatter på wiki-artikler (tom = altid virksomheden)
             'forfatter_titel'   => '',
+            'forfatter_url'     => '',        // forfatterens egen side (Person.url i schemaet)
             'forfatter_forael'  => 'wiki',    // sider under denne forælder-slug er artikler med forfatter
             // Lancering (hm-lancering)
             'dev_vaert'         => '',        // udviklingsadressen: 301 til domænet, når sitet er lanceret

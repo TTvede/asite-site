@@ -128,6 +128,8 @@ class Asite_Site_Seo {
                        'name' => (string) Asite_Site::i('forfatter_navn')];
             $titel = trim((string) Asite_Site::i('forfatter_titel', ''));
             if ($titel !== '') { $person['jobTitle'] = $titel; }
+            $url = trim((string) Asite_Site::i('forfatter_url', ''));
+            if ($url !== '') { $person['url'] = $url; }
             $data['asite_forfatter'] = $person;
         }
         return $data;

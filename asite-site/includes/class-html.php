@@ -50,6 +50,40 @@ class Asite_Site_Html {
         }
 
         add_action('template_redirect', [__CLASS__, 'start_buffer'], 4);
+
+        // Skrifter over folden hentes med det samme. Uden det opdager browseren dem først, når CSS'en er læst, og
+        // teksten skifter skrift undervejs: på terrasse.nu voksede heroen på mobil, og USP-båndet hoppede (CLS 0,16–0,21,
+        // 10-11-2026). Hent kun små filer – en stor skrift gjorde LCP 0,4 s langsommere.
+        if (trim((string) ($s['skrifter_forhaand'] ?? '')) !== '') {
+            add_action('wp_head', [__CLASS__, 'skrifter_forhaand'], 1);
+        }
+    }
+
+    /** Skriftfilernes adresser. Et bart filnavn hører til sitets egne skrifter i uploads/<præfiks>-filer/fonts/. */
+    public static function skrifter_adresser(): array {
+        $ud = [];
+        $up = wp_get_upload_dir();
+        $p = Asite_Site::praefiks();
+        foreach (Asite_Site::liste((string) Asite_Site::i('skrifter_forhaand', '')) as $f) {
+            if (preg_match('#^https?://#i', $f) || $f[0] === '/') {
+                $sti = wp_parse_url($f, PHP_URL_PATH);
+                $rel = strpos((string) $sti, '/wp-content/uploads/') === 0 ? substr($sti, strlen('/wp-content/uploads/')) : null;
+            } else {
+                if (!$p) { continue; }
+                $rel = $p . '-filer/fonts/' . basename($f);
+            }
+            // Kun filer, der faktisk ligger på sitet: en forkert linje må ikke give en 404 på hver side.
+            if (!$rel || strpos($rel, '..') !== false || !is_file(trailingslashit($up['basedir']) . $rel)) { continue; }
+            $ud[] = '/wp-content/uploads/' . $rel;
+        }
+        return array_values(array_unique($ud));
+    }
+
+    public static function skrifter_forhaand() {
+        foreach (self::skrifter_adresser() as $u) {
+            $type = preg_match('/\.woff2$/i', $u) ? 'font/woff2' : (preg_match('/\.woff$/i', $u) ? 'font/woff' : '');
+            echo '<link rel="preload" href="' . esc_url($u) . '" as="font"' . ($type ? ' type="' . $type . '"' : '') . " crossorigin>\n";
+        }
     }
 
     public static function global_styles_fra() {
