@@ -58,6 +58,7 @@ function proeve_html(): string {
   <span class="fa-kort-tekst">
   </span>
 </section>
+<div class="fa-galleri" data-hm-billedliste="data-billeder:billeder" data-billeder="https://test.invalid/wp-content/uploads/2026/11/foto.avif|https://test.invalid/wp-content/uploads/2026/11/ukendt.avif"></div>
 </body></html>
 HTML;
 }

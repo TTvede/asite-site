@@ -1,0 +1,7 @@
+# md5 af husmodellens mu-plugins, som Asite Site er ført i takt med (./test.sh --synk) – 2026-11-10
+d01f6303660e3276f60398e5bf8cdd5d  hm-billedattr.php
+cb3f03b2a09467f72a395e4fc727cdaa  hm-grundlag.php
+80c0634a5a0ef5c220525e9df7ee6f83  hm-lancering.php
+7dfacb57777221517195e712fc96b9ae  hm-redaktoer.php
+1065fa810a74aa7aaf2a3520185075b4  hm-schema.php
+b08dd109d32263a303c2b43204ab470c  hm-sporing.php

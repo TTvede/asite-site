@@ -47,6 +47,7 @@ class Asite_Site_Admin {
             'sizes_loft'        => max(0, (int) ($p['sizes_loft'] ?? 1200)),
             'sizes_regler'      => $tekst('sizes_regler'),
             'avif_kvalitet'     => min(100, max(0, (int) ($p['avif_kvalitet'] ?? 50))),
+            'billedliste_stoerrelse' => sanitize_key($linje('billedliste_stoerrelse')) ?: 'large',
             'tomme_klasser'     => $tekst('tomme_klasser'),
             'hero_ivrig'        => !empty($p['hero_ivrig']),
             'inline_svg'        => !empty($p['inline_svg']),
@@ -170,6 +171,10 @@ class Asite_Site_Admin {
                         <input type="number" name="avif_kvalitet" min="0" max="100" value="<?php echo (int) $s['avif_kvalitet']; ?>" style="width:90px">
                         <p class="description">Understørrelser laves i samme kvalitet som originalerne (50). Med WordPress' standard (82) bliver
                         understørrelserne større end originalen. 0 = rør ikke kvaliteten.</p></td></tr>
+                    <tr><th scope="row">Billedlister</th><td>
+                        <?php self::felt('billedliste_stoerrelse', $s['billedliste_stoerrelse'], 12, 'large'); ?>
+                        <p class="description">Størrelsen fra mediebiblioteket, som billedlister skrives om til (fx billederne i en lysboks,
+                        som siden ikke viser, før man klikker). <code>large</code> er 1024 px – originalen kan være flere gange så stor.</p></td></tr>
                 </table>
 
                 <h2 class="title">Sidens finish</h2>

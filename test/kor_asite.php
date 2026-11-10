@@ -1,5 +1,6 @@
 <?php
-/** Kør prøvesidens HTML gennem Asite Site. Brug: php kor_asite.php <sti til asite-site-mappen> */
+/** Kør prøvesidens HTML gennem Asite Sites output-buffer, sådan som template_redirect starter den på et site.
+ *  Brug: php kor_asite.php <sti til asite-site-mappen> */
 require __DIR__ . '/wp-stub.php';
 require __DIR__ . '/fixtur.php';
 $dir = rtrim($argv[1], '/') . '/';
@@ -10,4 +11,4 @@ require $dir . 'includes/class-core.php';
 require $dir . 'includes/class-html.php';
 update_option(Asite_Site::OPT, proeve_indstillinger());
 Asite_Site_Html::init();
-echo Asite_Site_Html::behandl(proeve_html());
+echo gennem_bufferne(proeve_html());

@@ -25,6 +25,7 @@ class Asite_Site {
             'sizes_loft'        => 1200,      // bredere billeder får »(max-width: Npx) 100vw, Npx« i stedet for originalbredden
             'sizes_regler'      => '',        // én pr. linje: »<klasse> = <sizes>«
             'avif_kvalitet'     => 50,        // understørrelser i samme kvalitet som originalerne
+            'billedliste_stoerrelse' => 'large', // billedlister (data-hm-billedliste) → denne størrelse fra mediebiblioteket
             // HTML-finish (hm-grundlag, resten)
             'tomme_klasser'     => '',        // én klasse pr. linje: blanktegn fjernes, så CSS :empty rammer
             'hero_ivrig'        => true,      // <præfiks>-lcp / -scene-billede / -ikke-lazy: ingen lazy load

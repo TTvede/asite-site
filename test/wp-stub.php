@@ -117,3 +117,37 @@ function wp_image_add_srcset_and_sizes($tag, $meta, $id) {
     $sizes = apply_filters('wp_calculate_image_sizes', $sizes, [$meta['width'], $meta['height']], $tag, $meta, $id);
     return preg_replace('/<img\b/i', '<img srcset="' . $srcset . '" sizes="' . $sizes . '"', $tag, 1);
 }
+
+/* billedlister: ét databaseopslag for hele siden (mediebibliotekets _wp_attached_file → id) */
+class Proeve_WPDB {
+    public $postmeta = 'wp_postmeta';
+    public function prepare($q, ...$a) { return "'" . addslashes((string) $a[0]) . "'"; }
+    public function get_results($sql) {
+        $ud = [];
+        foreach ($GLOBALS['BILLEDER'] as $url => $id) {
+            $rel = substr($url, strlen($GLOBALS['HOME'] . '/wp-content/uploads/'));
+            if (strpos($sql, "'" . addslashes($rel) . "'") !== false) { $ud[] = (object) ['post_id' => $id, 'meta_value' => $rel]; }
+        }
+        return $ud;
+    }
+    public function get_col($sql) { return []; }
+}
+$GLOBALS['wpdb'] = new Proeve_WPDB();
+function update_postmeta_cache($ids) { return true; }
+function wp_get_attachment_image_url($id, $size = 'thumbnail') {
+    $m = $GLOBALS['BILLED_META'][$id] ?? null;
+    if (!$m) { return false; }
+    $navn = preg_replace('/\.(\w+)$/', '-1024x512.$1', $m['file']);
+    return $GLOBALS['HOME'] . '/wp-content/uploads/' . $navn . ($size !== 'large' ? '?str=' . $size : '');
+}
+/** Kør HTML'en gennem de output-buffere, template_redirect har startet – præcis som på et rigtigt site. */
+function gennem_bufferne(string $html): string {
+    ob_start();                              // opsamleren: her lander resultatet
+    $niveau = ob_get_level();
+    do_action('template_redirect');          // pluginets/mu-plugins' egne ob_start(callback)
+    echo $html;
+    // ob_end_flush kører hver buffers callback og sender resultatet ét niveau ud – den inderste (startet sidst) først,
+    // som når PHP afslutter en side. (ob_get_clean ville give det RÅ indhold uden callbacken.)
+    while (ob_get_level() > $niveau) { ob_end_flush(); }
+    return ob_get_clean();
+}

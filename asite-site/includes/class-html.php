@@ -105,7 +105,7 @@ class Asite_Site_Html {
     public static function behandl($html) {
         if (!is_string($html) || $html === '') { return $html; }
         $s = Asite_Site::indstillinger();
-        if (!empty($s['billeder'])) { $html = self::billedattr($html); }
+        if (!empty($s['billeder'])) { $html = self::billedattr(self::billedlister($html)); }
         if (!empty($s['scenelag'])) { $html = self::lagnavn($html); }
         if (!empty($s['inline_svg'])) { $html = self::inline_svg($html); }
         if (!empty($s['hero_ivrig'])) { $html = self::hero_ivrig($html); }
@@ -198,6 +198,51 @@ class Asite_Site_Html {
                 }
             }
             return self::billed_sizes($tag);
+        }, $html);
+    }
+
+    /**
+     * Billedlister (data-hm-billedliste="<attr>:<felt>", fx en lysboks): en liste af billedadresser i én attribut,
+     * adskilt af |, til et script, der skal kende billeder, siden ikke viser. Originalerne skrives om til
+     * mediebibliotekets »large« (1024 px) – den størrelse, et gammelt site viste i sin lysboks (terrasse.nu's galleri,
+     * 10-11-2026: originalen var op til fire gange så stor). Opslagene samles i ét databasekald for hele siden.
+     * Fra husmodellens hm-billedattr.php (f512496).
+     */
+    public static function billedlister($html) {
+        if (strpos($html, 'data-hm-billedliste=') === false) { return $html; }
+        $moenster = '/<[a-z][\w-]*\b[^>]*\sdata-hm-billedliste="([\w-]+):[\w-]+"[^>]*>/i';
+        if (!preg_match_all($moenster, $html, $alle, PREG_SET_ORDER)) { return $html; }
+        $up = wp_get_upload_dir();
+        $base = trailingslashit($up['baseurl']);
+        $filer = [];
+        foreach ($alle as $m) {
+            if (preg_match('/\s' . preg_quote($m[1], '/') . '="([^"]*)"/', $m[0], $a)) {
+                foreach (explode('|', html_entity_decode($a[1])) as $u) {
+                    if (strpos($u, $base) === 0) { $filer[substr($u, strlen($base))] = true; }
+                }
+            }
+        }
+        $id = [];
+        if ($filer) {
+            global $wpdb;
+            $in = implode(',', array_map(fn($f) => $wpdb->prepare('%s', $f), array_keys($filer)));
+            foreach ($wpdb->get_results("SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value IN ($in)") as $r) {
+                $id[$r->meta_value] = (int) $r->post_id;
+            }
+            update_postmeta_cache(array_values($id));
+        }
+        $str = apply_filters('asite_site/billedliste_stoerrelse', (string) Asite_Site::i('billedliste_stoerrelse', 'large') ?: 'large');
+        return preg_replace_callback($moenster, function ($m) use ($id, $base, $str) {
+            $navn = $m[1];
+            return preg_replace_callback('/\s' . preg_quote($navn, '/') . '="([^"]*)"/', function ($a) use ($id, $base, $str, $navn) {
+                $ud = [];
+                foreach (explode('|', html_entity_decode($a[1])) as $u) {
+                    $f = strpos($u, $base) === 0 ? substr($u, strlen($base)) : '';
+                    $ny = ($f !== '' && !empty($id[$f])) ? wp_get_attachment_image_url($id[$f], $str) : false;
+                    $ud[] = $ny ?: $u;
+                }
+                return ' ' . $navn . '="' . esc_attr(implode('|', $ud)) . '"';
+            }, $m[0], 1);
         }, $html);
     }
 

@@ -7,6 +7,16 @@
 # PRÆCIS samme resultat. Det er prøvestenen for, at et site kan flyttes over uden at se anderledes ud.
 set -uo pipefail
 cd "$(dirname "$0")"
+# ./test.sh --synk : notér, at pluginet nu er ført i takt med husmodellens hm-*.php (efter en ændring er ført over).
+# Husmodellens egen prøvekørsel (hm test) sammenligner med test/hm-synk.txt og stopper, hvis en hm-*.php er ændret
+# siden – så en ny funktion i et mu-plugin ikke lydløst mangler i pluginet (billedlisterne, f512496, 10-11-2026).
+HM_FILER="hm-billedattr.php hm-grundlag.php hm-lancering.php hm-redaktoer.php hm-schema.php hm-sporing.php"
+if [ "${1:-}" = "--synk" ]; then
+  MU="${2:-$HOME/projects/husmodel/mu-plugins}"
+  { echo "# md5 af husmodellens mu-plugins, som Asite Site er ført i takt med (./test.sh --synk) – $(date +%F)"
+    for f in $HM_FILER; do echo "$(md5sum < "$MU/$f" | cut -c1-32)  $f"; done; } > test/hm-synk.txt
+  cat test/hm-synk.txt; exit 0
+fi
 MU="${1:-$HOME/projects/husmodel/mu-plugins}"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 FEJL=0
@@ -40,7 +50,8 @@ if [ -f "$MU/hm-grundlag.php" ]; then
     ok "pluginets HTML er identisk med hm-billedattr + hm-grundlag"
     # og den skal faktisk GØRE noget – ellers består to tomme resultater prøven
     grep -q 'fetchpriority="high"' "$T/asite.html" && grep -q '<svg aria-hidden' "$T/asite.html" \
-      && grep -q 'srcset=' "$T/asite.html" && ok "…og den har gjort arbejdet (hero, srcset, inline-SVG)" \
+      && grep -q 'srcset=' "$T/asite.html" && grep -q 'foto-1024x512.avif|https://test.invalid/wp-content/uploads/2026/11/ukendt.avif' "$T/asite.html" \
+      && ok "…og den har gjort arbejdet (hero, srcset, inline-SVG, billedliste → large)" \
       || fejl "HTML'en er ubehandlet – prøven beviser ingenting"
   else
     fejl "pluginet giver ANDEN HTML end mu-plugins:"

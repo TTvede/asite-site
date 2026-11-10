@@ -3,8 +3,8 @@
  * Kør PRÆCIS samme HTML gennem husmodellens hm-billedattr.php + hm-grundlag.php, med fauth.dk's egne filtre.
  * Brug: php kor_hm.php <sti til husmodellens mu-plugins>
  *
- * Rækkefølgen er som på et rigtigt site: hm-grundlag starter sin output-buffer på prioritet 4 og hm-billedattr på 5,
- * og output-buffere afvikles omvendt – billederne først, så finishen.
+ * Bufferne startes af mu-plugins' egen template_redirect-kode, så rækkefølgen og en ændring i dem (fx billedlisterne,
+ * f512496) kommer med af sig selv – prøven afhænger ikke af, at nogen har husket at opdatere den.
  */
 require __DIR__ . '/wp-stub.php';
 require __DIR__ . '/fixtur.php';
@@ -26,4 +26,4 @@ add_filter('hm_sizes_regler', function () use ($i) {
     return $ud;
 });
 
-echo hm_tomme_felter(hm_hero_eager(hm_inline_svg(hm_lagnavn(hm_billedattr(proeve_html())))));
+echo gennem_bufferne(proeve_html());
