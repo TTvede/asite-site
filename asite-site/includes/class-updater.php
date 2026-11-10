@@ -24,7 +24,7 @@ class Asite_Site_Updater {
     }
 
     private static function latest() {
-        $cached = get_site_transient('asite_cache_latest');
+        $cached = get_site_transient('asite_site_latest');
         if ($cached !== false) { return $cached; }
         $r = wp_remote_get('https://api.github.com/repos/' . self::REPO . '/releases/latest', ['timeout' => 10, 'headers' => ['Accept' => 'application/vnd.github+json']]);
         $rel = null;
@@ -36,7 +36,7 @@ class Asite_Site_Updater {
                 }
             }
         }
-        set_site_transient('asite_cache_latest', $rel ?: [], 6 * HOUR_IN_SECONDS);
+        set_site_transient('asite_site_latest', $rel ?: [], 6 * HOUR_IN_SECONDS);
         return $rel ?: [];
     }
 

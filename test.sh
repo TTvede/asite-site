@@ -80,7 +80,19 @@ grep -q 'ingen output-buffer' <<<"$ud" && grep -q 'ingen robots' <<<"$ud" && gre
   && ok "intet dobbelt: ingen buffer, ingen robots.txt, intet i <head>" || fejl "pluginet rører sitet i overgangen: $ud"
 grep -q 'indstillingsside findes' <<<"$ud" && ok "indstillingerne kan udfyldes FØR mu-plugins fjernes" || fejl "ingen indstillingsside i overgangen"
 
-echo "5. Release-zippen kan bygges"
+echo "5. Opdateringen må ikke dele noget med Asite Cache"
+# 0.1.0 delte cache-nøglen asite_cache_latest med Asite Cache (kopieret updater, kun bindestreg-navnene skiftet).
+# Så kunne den ene plugins release blive tilbudt som opdatering af den anden – asite-cache.zip i asite-site/.
+if grep -n "asite_cache\|asite-cache\|ASITE_CACHE\|Asite_Cache_Updater" asite-site/includes/class-updater.php asite-site/uninstall.php; then
+  fejl "updateren peger på Asite Caches navne (se linjerne ovenfor)"
+else
+  ok "updateren bruger kun Asite Sites egne navne (repo, slug, cache-nøgle, token)"
+fi
+grep -q "get_site_transient('asite_site_latest')" asite-site/includes/class-updater.php && ok "cache-nøglen er asite_site_latest" || fejl "cache-nøglen"
+v1=$(grep -o "Version: [0-9.]*" asite-site/asite-site.php | cut -d' ' -f2); v2=$(grep -o "ASITE_SITE_VERSION', '[0-9.]*" asite-site/asite-site.php | grep -o "[0-9.]*$")
+[ "$v1" = "$v2" ] && ok "versionen står ens begge steder ($v1)" || fejl "Version: $v1 men ASITE_SITE_VERSION $v2"
+
+echo "6. Release-zippen kan bygges"
 if ./byg.sh >/dev/null 2>&1 && [ -f dist/asite-site.zip ]; then
   python3 - <<'PY' && ok "dist/asite-site.zip med mappen asite-site/ i roden" || fejl "zippens indhold"
 import zipfile, sys
