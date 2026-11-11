@@ -34,7 +34,10 @@ class Asite_Site_Lancering {
 
     public static function init() {
         add_action('init', [__CLASS__, 'fra_udviklingsadressen'], 0);
-        add_action('template_redirect', [__CLASS__, 'gamle_adresser'], 1);
+        // parse_request, ikke template_redirect: Rank Maths omdirigering af vedhæftede filer griber ind før
+        // template_redirect, og en gammel adresse med samme slug som et billede endte på forsiden (terrasse.nu
+        // /spansk-trappe/, 15-09-2026). Sitets egen, eksplicitte liste skal vinde over enhver generisk regel.
+        add_action('parse_request', [__CLASS__, 'gamle_adresser'], 0);
         if (Asite_Site::i('robots')) {
             add_filter('robots_txt', [__CLASS__, 'robots_txt'], 99, 2);
         }
@@ -68,8 +71,10 @@ class Asite_Site_Lancering {
             $raa = apply_filters('asite_site/gamle_adresser', Asite_Site::par((string) Asite_Site::i('gamle_adresser', '')));
             $k = [];
             foreach ($raa as $fra => $til) {
-                $fra = strtolower(trailingslashit('/' . trim(parse_url($fra, PHP_URL_PATH) ?: $fra, '/')));
-                if ($fra !== '/') { $k[$fra] = $til; }   // »/« ville omdirigere forsiden til sig selv i en løkke
+                // »/sti/*« er et prefix (fx alle /galleri/page/N/); det gemmes med stjernen, så det kendes igen.
+                $prefix = substr(rtrim($fra), -1) === '*';
+                $fra = strtolower(trailingslashit('/' . trim(parse_url(rtrim(rtrim($fra), '*'), PHP_URL_PATH) ?: $fra, '/')));
+                if ($fra !== '/') { $k[$fra . ($prefix ? '*' : '')] = $til; }   // »/« ville sende forsiden til sig selv
             }
             return $k;
         });
@@ -79,8 +84,19 @@ class Asite_Site_Lancering {
         $kort = self::kort();
         if (!$kort) { return; }
         $sti = strtolower(trailingslashit(wp_parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/'));
-        if (isset($kort[$sti])) {
-            $til = $kort[$sti];
+        $til = $kort[$sti] ?? null;
+        if ($til === null) {   // et prefix – det længste vinder; selve målet omdirigeres aldrig (ingen løkke)
+            $bedst = '';
+            foreach ($kort as $fra => $maal) {
+                if (substr($fra, -1) === '*' && strlen($fra) > strlen($bedst) && strpos($sti, rtrim($fra, '*')) === 0) {
+                    $bedst = $fra;
+                }
+            }
+            if ($bedst !== '' && strtolower(trailingslashit((string) wp_parse_url($kort[$bedst], PHP_URL_PATH))) !== $sti) {
+                $til = $kort[$bedst];
+            }
+        }
+        if ($til !== null) {
             wp_redirect(preg_match('#^https?://#i', $til) ? $til : home_url($til), 301, 'Asite Site');
             exit;
         }

@@ -81,6 +81,18 @@ p('gammel adresse → ny side (301)',
 p('gammel adresse uden skråstreg til sidst virker også',
     $gaa('/start', 'test.invalid', 'https://test.invalid') === ['https://test.invalid/', 301]);
 p('ukendt adresse omdirigeres ikke', $gaa('/findes-ikke/', 'test.invalid', 'https://test.invalid') === null);
+// Prefix (»*« til sidst): terrasse.nu's galleri er én side, men /terrassegalleri/page/N/ svarede 200 for ethvert N –
+// uendelige næsten-dubletter (live lukkede dem 18-10-2026). En fast adresse vinder over et prefix.
+saet(['gamle_adresser' => "/galleri/page/* = /galleri/\n/galleri/page/9/ = /andet/\n/start/ = /"]);
+p('prefix: /galleri/page/3/ → /galleri/', $gaa('/galleri/page/3/', 'test.invalid', 'https://test.invalid') === ['https://test.invalid/galleri/', 301]);
+p('prefix: selve siden omdirigeres ikke (ingen løkke)', $gaa('/galleri/', 'test.invalid', 'https://test.invalid') === null);
+p('en fast adresse vinder over et prefix', $gaa('/galleri/page/9/', 'test.invalid', 'https://test.invalid') === ['https://test.invalid/andet/', 301]);
+saet();
+// Rank Maths omdirigering af vedhæftede filer kører før template_redirect: en gammel adresse med samme slug som et
+// billede endte på forsiden (live's /spansk-trappe/, 15-09-2026). Listen skal derfor køre på parse_request.
+$GLOBALS['H'] = [];
+Asite_Site_Lancering::init();
+p('gamle adresser kører på parse_request (før Rank Maths regler)', !empty($GLOBALS['H']['parse_request'][0]));
 $GLOBALS['HOME'] = 'https://test.invalid';
 
 /* ---------- 4. FAQ-schema fra Breakdance-træet ---------- */
