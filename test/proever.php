@@ -229,6 +229,15 @@ p('»straks« + Ads i tagget: én indlæsning, ingen ekstra Ads-config, ingen Me
     str_contains($ud, '<script async src="https://www.googletagmanager.com/gtag/js?id=GT-TEST1234"')
     && !str_contains($ud, 'config\',"AW-') && !str_contains($ud, 'asite-meta'));
 p('intet på udviklingsadressen (tallene må ikke forurenes)', !str_contains($spor($CFG, 'ny.test.invalid'), '<script'));
+// Før lanceringen ER hjemmeadressen udviklingsadressen (ny.<domæne>). Husmodellens hm-sporing.php tillod kun HM_DOMAENE,
+// så sporingen var tavs dér; pluginet sporede på hjemmeadressen og ville have sendt testbesøg til live's konti
+// (fundet ved flytningen af ny.terrasse.nu 11-11-2026).
+$hjem = $GLOBALS['HOME'];
+$GLOBALS['HOME'] = 'https://ny.test.invalid';
+saet(['sporing' => $CFG, 'dev_vaert' => 'ny.test.invalid']);
+$_SERVER['HTTP_HOST'] = 'ny.test.invalid';
+p('før lanceringen: intet på udviklingsadressen, selv om den er hjemmeadressen', !Asite_Site_Sporing::aktiv());
+$GLOBALS['HOME'] = $hjem;
 p('kører også på www.', str_contains($spor($CFG, 'www.test.invalid'), 'asite-samtykke'));
 p('intet uden opsætning (slået fra som standard)', !str_contains($spor([]), '<script'));
 p('ugyldigt id ignoreres i stedet for at blive skrevet ud', !str_contains($spor(['tag' => 'noget vrøvl']), '<script'));

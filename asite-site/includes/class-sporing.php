@@ -63,6 +63,10 @@ class Asite_Site_Sporing {
         $c = self::cfg();
         $vaert = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
         $eget = strtolower((string) wp_parse_url(home_url('/'), PHP_URL_HOST));
+        // Aldrig på udviklingsadressen – heller ikke før lanceringen, hvor den ER hjemmeadressen. Ellers sender
+        // testbesøg og testformularer rigtige målinger til live's konti (ny.terrasse.nu 11-11-2026).
+        $dev = strtolower(trim((string) Asite_Site::i('dev_vaert', '')));
+        if ($dev !== '' && $vaert === $dev) { return false; }
         $tilladt = $c['vaert'] !== '' ? [$c['vaert']] : [$eget, 'www.' . preg_replace('/^www\./', '', $eget)];
         return in_array($vaert, $tilladt, true);
     }
