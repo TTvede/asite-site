@@ -233,7 +233,7 @@ class Asite_Site_Admin {
                         <p class="description">Sider under forælderen
                         <?php self::felt('forfatter_forael', $s['forfatter_forael'], 10, 'wiki'); ?>
                         <p style="margin-top:10px">Kun artikler under: <?php self::omraade('artikler', $s['artikler'], 2, "wiki\ncases"); ?></p>
-                        <p class="description">Rank Math lægger »Article« på alle sider. Står der forældre her (én pr. linje), beholder kun deres undersider den. Tomt = Rank Maths standard.</p>
+                        <p class="description">Rank Math lægger »Article« på alle sider. Står der forældre her (én pr. linje), beholder kun deres undersider den – og enkelte sider skrevet som <code>/sti/</code>. Tomt = Rank Maths standard.</p>
                         bliver <code>Article</code> med denne person som forfatter. Står navnet tomt, er virksomheden forfatter på alle sider.</p></td></tr>
                 </table>
 

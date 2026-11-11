@@ -191,6 +191,8 @@ p('artikler: Article fjernet på en side uden for wiki/cases', !isset(Asite_Site
 $GLOBALS['FORAELDER'][42] = 9; $GLOBALS['POST_FIELD']['9:post_name'] = 'cases';
 p('artikler: Article bevaret på en case', isset(Asite_Site_Seo::rankmath_json_ld($graf)['richSnippet']));
 unset($GLOBALS['FORAELDER'][42]);
+saet(['artikler' => "wiki\n/en-side/"]);
+p('artikler: en enkelt side (/sti/) beholder Article', isset(Asite_Site_Seo::rankmath_json_ld($graf)['richSnippet']));
 saet();
 
 /* Sidetype og ekstra schema pr. side (spec: schema:) – fx ContactPage og prisberegnerens WebApplication. */

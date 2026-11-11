@@ -211,10 +211,14 @@ class Asite_Site_Seo {
         if (!is_singular('page')) { return $data; }
         $id = get_queried_object_id();
         // Kun artikler beholder Rank Maths Article (når indstillingen er sat).
-        $art = array_filter(array_map(fn($x) => trim($x, '/ '), preg_split('/[\s,]+/', (string) Asite_Site::i('artikler', ''))));
+        // »wiki« = undersider af wiki; »/sti/« = netop den side (fx et tidligere blogindlæg, der nu er en topside).
+        $art = array_filter(array_map('trim', preg_split('/[\s,]+/', (string) Asite_Site::i('artikler', ''))));
         if ($art) {
             $far = (int) wp_get_post_parent_id($id);
-            if (!$far || !in_array(get_post_field('post_name', $far), $art, true)) {
+            $sti = '/' . trim((string) wp_parse_url(get_permalink($id), PHP_URL_PATH), '/') . '/';
+            $er_art = in_array($sti, array_map(fn($x) => '/' . trim($x, '/') . '/', array_filter($art, fn($x) => $x[0] === '/')), true)
+                || ($far && in_array(get_post_field('post_name', $far), array_filter($art, fn($x) => $x[0] !== '/'), true));
+            if (!$er_art) {
                 foreach ($data as $k => $node) {
                     if (is_array($node) && array_intersect((array) ($node['@type'] ?? []), ['Article', 'BlogPosting', 'NewsArticle'])) { unset($data[$k]); }
                 }
