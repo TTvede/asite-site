@@ -23,6 +23,76 @@ class Asite_Site_Seo {
             add_action('wp_head', [__CLASS__, 'faq_schema'], 30);
         }
         add_filter('rank_math/json_ld', [__CLASS__, 'rankmath_json_ld'], 99);
+        add_action('wp_head', [__CLASS__, 'service_schema'], 31);
+    }
+
+    /**
+     * Virksomhedens oplysninger som schema.org-felter. Kun udfyldte felter kommer med.
+     * Før lå de i sitets egne mu-plugins (terrasse.nu: terrassenu-localbusiness-reviews.php) – nu er de indstillinger.
+     */
+    /** Én værdi pr. linje (åbningstider og stednavne har mellemrum og kommaer). */
+    private static function linjer(string $tekst): array {
+        return array_values(array_filter(array_map('trim', preg_split('/\R/u', $tekst) ?: []), fn($x) => $x !== '' && $x[0] !== '#'));
+    }
+
+    public static function virksomhed(): array {
+        $v = (array) Asite_Site::i('virksomhed', []);
+        $f = fn($k) => trim((string) ($v[$k] ?? ''));
+        $ud = [];
+        if ($f('telefon') !== '') { $ud['telephone'] = $f('telefon'); }
+        if ($f('email') !== '') { $ud['email'] = $f('email'); }
+        if ($f('gade') !== '' || $f('by') !== '') {
+            $ud['address'] = array_filter(['@type' => 'PostalAddress', 'streetAddress' => $f('gade'), 'addressLocality' => $f('by'),
+                'addressRegion' => $f('region'), 'postalCode' => $f('postnr'), 'addressCountry' => $f('land')]);
+        }
+        if ($f('cvr') !== '') { $ud['identifier'] = ['@type' => 'PropertyValue', 'propertyID' => 'CVR', 'value' => $f('cvr')]; }
+        if ($f('beskrivelse') !== '') { $ud['description'] = $f('beskrivelse'); }
+        if ($f('prisniveau') !== '') { $ud['priceRange'] = $f('prisniveau'); }
+        if (preg_match('/^\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*$/', $f('geo'), $m)) {
+            $ud['geo'] = ['@type' => 'GeoCoordinates', 'latitude' => (float) $m[1], 'longitude' => (float) $m[2]];
+        }
+        if ($t = self::linjer($f('aabningstider'))) { $ud['openingHours'] = $t; }
+        if ($o = self::linjer($f('omraader'))) {
+            $ud['areaServed'] = array_map(fn($n) => ['@type' => 'AdministrativeArea', 'name' => $n], $o);
+        }
+        if ($p = self::linjer($f('profiler'))) { $ud['sameAs'] = $p; }
+        $anm = [];
+        foreach (preg_split('/\R/', $f('anmeldelser')) as $l) {
+            $d = array_map('trim', explode('|', $l));
+            if (count($d) < 2 || $d[0] === '' || $d[1] === '') { continue; }
+            $stj = max(1, min(5, (int) ($d[2] ?? 5) ?: 5));
+            $anm[] = ['@type' => 'Review', 'author' => ['@type' => 'Person', 'name' => $d[0]], 'reviewBody' => $d[1],
+                      'reviewRating' => ['@type' => 'Rating', 'ratingValue' => (string) $stj, 'bestRating' => '5']];
+        }
+        if ($anm) {
+            $snit = array_sum(array_map(fn($a) => (int) $a['reviewRating']['ratingValue'], $anm)) / count($anm);
+            $ud['aggregateRating'] = ['@type' => 'AggregateRating', 'ratingValue' => (string) round($snit, 1),
+                                      'reviewCount' => (string) count($anm), 'bestRating' => '5'];
+            $ud['review'] = $anm;
+        }
+        return $ud;
+    }
+
+    /**
+     * Service-schema for sider, der sælger en ydelse (fx en by-side). Data fra sidens post meta »_asite_service«
+     * (JSON: navn, type, omraader, omraade_type), som hm asite_site skriver ud fra sidens spec – live's
+     * terrassenu-service-schema.php byggede det af ACF-felter, som builder-modellen ikke har (terrasse.nu 11-11-2026).
+     */
+    public static function service_schema() {
+        if (!is_singular('page')) { return; }
+        $id = get_queried_object_id();
+        $s = json_decode((string) get_post_meta($id, '_asite_service', true), true);
+        if (!is_array($s) || trim((string) ($s['navn'] ?? '')) === '') { return; }
+        $type = in_array($s['omraade_type'] ?? '', ['City', 'AdministrativeArea', 'Place'], true) ? $s['omraade_type'] : 'City';
+        $omr = array_values(array_filter(array_map('trim', (array) ($s['omraader'] ?? []))));
+        $data = ['@context' => 'https://schema.org', '@type' => 'Service', 'name' => trim((string) $s['navn']),
+                 'serviceType' => trim((string) ($s['type'] ?? '')) ?: trim((string) $s['navn']),
+                 'provider' => ['@id' => home_url('/#organization')], 'url' => get_permalink($id)];
+        if ($omr) {
+            $liste = array_map(fn($n) => ['@type' => $type, 'name' => $n], $omr);
+            $data['areaServed'] = count($liste) === 1 ? $liste[0] : $liste;
+        }
+        echo '<script type="application/ld+json" id="asite-service">' . wp_json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "</script>\n";
     }
 
     /**
@@ -105,6 +175,19 @@ class Asite_Site_Seo {
                 if (is_array($node) && array_intersect((array) ($node['@type'] ?? []), ['Organization', 'LocalBusiness', 'ProfessionalService'])) {
                     $data[$k]['alternateName'] = $altnavn;
                 }
+            }
+        }
+        // Virksomhedens oplysninger flettes ind i Rank Maths virksomheds-node (den første Organization/LocalBusiness).
+        $v = self::virksomhed();
+        $type = preg_replace('/[^A-Za-z]/', '', (string) (Asite_Site::i('virksomhed', [])['type'] ?? ''));
+        if ($v || $type !== '') {
+            foreach ($data as $k => $node) {
+                if (!is_array($node)) { continue; }
+                $typer = (array) ($node['@type'] ?? []);
+                if (!array_intersect($typer, ['Organization', 'LocalBusiness', 'ProfessionalService', 'HomeAndConstructionBusiness'])) { continue; }
+                if ($type !== '') { $data[$k]['@type'] = array_values(array_unique([$type, 'Organization'])); }
+                $data[$k] = array_merge($data[$k], $v);
+                break;   // kun den primære virksomheds-node
             }
         }
         if (!is_singular('page')) { return $data; }

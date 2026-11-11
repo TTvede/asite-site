@@ -148,6 +148,40 @@ p('wiki-artikel: navngiven forfatter og Article', ($r['side']['author']['@id'] ?
 unset($GLOBALS['FORAELDER'][42]);
 saet();
 
+/* Virksomheden: det, Rank Math ikke har felter til (eller som skal kunne overleve uden Rank Math), flettes ind i dens
+   virksomheds-node. terrasse.nu havde det i et site-mu-plugin (terrassenu-localbusiness-reviews.php), 11-11-2026. */
+saet(['virksomhed' => ['type' => 'HomeAndConstructionBusiness', 'telefon' => '+45 43 330 530', 'email' => 'info@test.invalid',
+    'gade' => 'Vej 1', 'postnr' => '2800', 'by' => 'Kgs. Lyngby', 'region' => 'Region Hovedstaden', 'land' => 'DK',
+    'cvr' => '36916702', 'beskrivelse' => 'Vi bygger terrasser.', 'prisniveau' => '10.000–600.000 kr.', 'geo' => '55.793569, 12.5057397',
+    'aabningstider' => "Mo,Tu,We,Th 07:00-17:00\nFr 07:00-16:00", 'omraader' => "Nordsjælland\nKøbenhavn",
+    'profiler' => "https://www.google.com/maps?cid=1", 'anmeldelser' => "Anne | Flot arbejde. | 5\nBo | Godt. | 4"]]);
+$r = Asite_Site_Seo::rankmath_json_ld($jsonld);
+$o = $r['org'];
+p('virksomhed: typen lagt oven på Organization', $o['@type'] === ['HomeAndConstructionBusiness', 'Organization']);
+p('virksomhed: adresse, telefon og e-mail', ($o['address']['postalCode'] ?? '') === '2800' && ($o['address']['@type'] ?? '') === 'PostalAddress'
+    && $o['telephone'] === '+45 43 330 530' && $o['email'] === 'info@test.invalid');
+p('virksomhed: CVR som identifier', ($o['identifier']['propertyID'] ?? '') === 'CVR' && $o['identifier']['value'] === '36916702');
+p('virksomhed: åbningstider, geo, prisniveau og beskrivelse', $o['openingHours'] === ['Mo,Tu,We,Th 07:00-17:00', 'Fr 07:00-16:00']
+    && $o['geo']['latitude'] === 55.793569 && $o['priceRange'] === '10.000–600.000 kr.' && $o['description'] === 'Vi bygger terrasser.');
+p('virksomhed: dækningsområder og profiler', ($o['areaServed'][1]['name'] ?? '') === 'København' && $o['sameAs'] === ['https://www.google.com/maps?cid=1']);
+p('virksomhed: anmeldelser og et samlet gennemsnit', count($o['review']) === 2 && $o['review'][0]['author']['name'] === 'Anne'
+    && $o['aggregateRating']['ratingValue'] === '4.5' && $o['aggregateRating']['reviewCount'] === '2');
+saet(['virksomhed' => ['telefon' => '+45 1']]);
+$o = Asite_Site_Seo::rankmath_json_ld($jsonld)['org'];
+p('virksomhed: tomme felter skrives ikke (og typen røres ikke)', $o['@type'] === 'Organization' && !isset($o['address']) && !isset($o['review']));
+saet();
+
+/* Service pr. side: sidens egne data (post meta _asite_service, skrevet af hm asite_site ud fra specen). Live's
+   terrassenu-service-schema.php byggede det af ACF-felter, som builder-modellen ikke har. */
+$GLOBALS['META']['42:_asite_service'] = json_encode(['navn' => 'Træterrasse Dragør', 'type' => 'Træterrasse',
+    'omraader' => ['Dragør', 'Søvang'], 'omraade_type' => 'City']);
+$ud = kor('wp_head');
+p('Service: navn, type og udbyder (virksomhedens @id)', str_contains($ud, '"@type":"Service"') && str_contains($ud, '"serviceType":"Træterrasse"')
+    && str_contains($ud, '"provider":{"@id":"https://test.invalid/#organization"}'));
+p('Service: dækningsområderne som byer', str_contains($ud, '{"@type":"City","name":"Søvang"}'));
+unset($GLOBALS['META']['42:_asite_service']);
+p('Service: intet uden sidens data', !str_contains(kor('wp_head'), '"Service"'));
+
 /* ---------- 5. Roller ---------- */
 echo "5. Roller\n";
 $GLOBALS['POST_TYPE'][100] = 'breakdance_header';

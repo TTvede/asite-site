@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Asite Site
  * Description: Det Breakdance ikke kan selv – på et site, kunden kan overtage: billedattributter og ærlig sizes, FAQ-schema og forfatter, omdirigeringer og robots.txt, hero uden lazy load, inline-SVG, redaktørlås og sporing. Alt styres fra Værktøjer → Asite Site. Opdateres fra GitHub.
- * Version: 0.1.6
+ * Version: 0.1.7
  * Author: Asite
  * Requires at least: 6.4
  * Requires PHP: 7.4
@@ -19,7 +19,7 @@
  */
 if (!defined('ABSPATH')) { exit; }
 
-define('ASITE_SITE_VERSION', '0.1.6');
+define('ASITE_SITE_VERSION', '0.1.7');
 define('ASITE_SITE_DIR', plugin_dir_path(__FILE__));
 define('ASITE_SITE_FILE', __FILE__);
 

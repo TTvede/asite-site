@@ -49,6 +49,19 @@ class Asite_Site {
             // Roller (hm-redaktoer + SVG-upload)
             'redaktoerlaas'     => true,      // Breakdances header/footer/skabeloner/blokke kun for administratorer
             'svg_upload'        => true,      // SVG i mediebiblioteket for administratorer (vores egne ikoner)
+            // Virksomheden i schema (flettes ind i Rank Maths Organization-node; i trin 2 skriver Asite Site selv grafen).
+            // Kilden på et husmodel-site er registry/site-fakta.yaml (hm asite_site). Tomme felter skrives ikke.
+            'virksomhed'        => [
+                'type' => '',                 // fx HomeAndConstructionBusiness (schema.org-type ud over Organization)
+                'telefon' => '', 'email' => '',
+                'gade' => '', 'postnr' => '', 'by' => '', 'region' => '', 'land' => 'DK',
+                'cvr' => '', 'beskrivelse' => '', 'prisniveau' => '',
+                'geo' => '',                  // »55.79, 12.50«
+                'aabningstider' => '',        // én pr. linje, schema.org-format: »Mo,Tu,We,Th 07:00-17:00«
+                'omraader' => '',             // dækningsområder, ét pr. linje (areaServed)
+                'profiler' => '',             // sameAs: Google Maps, Facebook … én adresse pr. linje
+                'anmeldelser' => '',          // én pr. linje: »Navn | tekst | 5«
+            ],
             // Sporing (hm-sporing) – slået FRA som standard
             'sporing'           => [
                 'tag' => '', 'ga4' => '', 'ads' => '', 'ads_i_tag' => false, 'meta' => '',
@@ -77,6 +90,7 @@ class Asite_Site {
             $gemt = get_option(self::OPT, []);
             $s = array_merge(self::standard(), is_array($gemt) ? $gemt : []);
             $s['sporing'] = array_merge(self::standard()['sporing'], is_array($s['sporing'] ?? null) ? $s['sporing'] : []);
+            $s['virksomhed'] = array_merge(self::standard()['virksomhed'], is_array($s['virksomhed'] ?? null) ? $s['virksomhed'] : []);
             return $s;
         });
     }

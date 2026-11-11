@@ -67,6 +67,16 @@ class Asite_Site_Admin {
             'robots_traening'   => !empty($p['robots_traening']),
             'redaktoerlaas'     => !empty($p['redaktoerlaas']),
             'svg_upload'        => !empty($p['svg_upload']),
+            'virksomhed'        => [
+                'type' => preg_replace('/[^A-Za-z]/', '', $linje('vi_type')),
+                'telefon' => $linje('vi_telefon'), 'email' => sanitize_email($linje('vi_email')),
+                'gade' => $linje('vi_gade'), 'postnr' => $linje('vi_postnr'), 'by' => $linje('vi_by'),
+                'region' => $linje('vi_region'), 'land' => strtoupper($linje('vi_land')) ?: 'DK',
+                'cvr' => preg_replace('/\D/', '', $linje('vi_cvr')), 'beskrivelse' => $tekst('vi_beskrivelse'),
+                'prisniveau' => $linje('vi_prisniveau'), 'geo' => $linje('vi_geo'),
+                'aabningstider' => $tekst('vi_aabningstider'), 'omraader' => $tekst('vi_omraader'),
+                'profiler' => $tekst('vi_profiler'), 'anmeldelser' => $tekst('vi_anmeldelser'),
+            ],
             'sporing'           => [
                 'tag' => strtoupper($linje('sp_tag')), 'ga4' => strtoupper($linje('sp_ga4')),
                 'ads' => strtoupper($linje('sp_ads')), 'meta' => preg_replace('/\D/', '', $linje('sp_meta')),
@@ -125,6 +135,7 @@ class Asite_Site_Admin {
         if (!self::cap()) { return; }
         $s = Asite_Site::indstillinger();
         $sp = $s['sporing'];
+        $vi = $s['virksomhed'];
         ?>
         <div class="wrap">
             <h1>Asite Site</h1>
@@ -246,6 +257,29 @@ class Asite_Site_Admin {
                     <tr><th scope="row">SVG-upload</th><td>
                         <?php self::tjek('svg_upload', $s['svg_upload'], 'Administratorer må uploade SVG-filer',
                             'Til sitets egne ikoner. Redaktører kan det ikke – en SVG fra en fremmed kan indeholde script.'); ?></td></tr>
+                </table>
+
+                <h2 class="title">Virksomheden i schema</h2>
+                <p>Det, Google og AI-søgning skal vide om virksomheden. Flettes ind i Rank Maths virksomheds-node; tomme felter udelades.</p>
+                <table class="form-table" role="presentation">
+                    <tr><th scope="row">Type</th><td><?php self::felt('vi_type', $vi['type'], 30, 'HomeAndConstructionBusiness'); ?>
+                        <p class="description">schema.org-typen ud over Organization, fx <code>HomeAndConstructionBusiness</code>, <code>ProfessionalService</code>.</p></td></tr>
+                    <tr><th scope="row">Telefon og e-mail</th><td><?php self::felt('vi_telefon', $vi['telefon'], 20, '+45 12 34 56 78'); ?> <?php self::felt('vi_email', $vi['email'], 30, 'info@eksempel.dk'); ?></td></tr>
+                    <tr><th scope="row">Adresse</th><td><?php self::felt('vi_gade', $vi['gade'], 30, 'Vejnavn 1'); ?>
+                        <?php self::felt('vi_postnr', $vi['postnr'], 6, '2800'); ?> <?php self::felt('vi_by', $vi['by'], 20, 'By'); ?>
+                        <?php self::felt('vi_region', $vi['region'], 20, 'Region Hovedstaden'); ?> <?php self::felt('vi_land', $vi['land'], 4, 'DK'); ?></td></tr>
+                    <tr><th scope="row">CVR</th><td><?php self::felt('vi_cvr', $vi['cvr'], 10); ?></td></tr>
+                    <tr><th scope="row">Beskrivelse</th><td><?php self::omraade('vi_beskrivelse', $vi['beskrivelse'], 3); ?></td></tr>
+                    <tr><th scope="row">Prisniveau og placering</th><td><?php self::felt('vi_prisniveau', $vi['prisniveau'], 25, '10.000–600.000 kr.'); ?>
+                        <?php self::felt('vi_geo', $vi['geo'], 25, '55.7935, 12.5057'); ?>
+                        <p class="description">Placering som breddegrad, længdegrad.</p></td></tr>
+                    <tr><th scope="row">Åbningstider</th><td><?php self::omraade('vi_aabningstider', $vi['aabningstider'], 3, "Mo,Tu,We,Th 07:00-17:00\nFr 07:00-16:00"); ?>
+                        <p class="description">Én pr. linje: dage (Mo Tu We Th Fr Sa Su) og tidsrum.</p></td></tr>
+                    <tr><th scope="row">Dækningsområder</th><td><?php self::omraade('vi_omraader', $vi['omraader'], 3, "Nordsjælland\nKøbenhavn"); ?></td></tr>
+                    <tr><th scope="row">Profiler</th><td><?php self::omraade('vi_profiler', $vi['profiler'], 3, "https://www.google.com/maps?cid=…"); ?>
+                        <p class="description">Virksomhedens profiler andre steder (sameAs), én adresse pr. linje.</p></td></tr>
+                    <tr><th scope="row">Anmeldelser</th><td><?php self::omraade('vi_anmeldelser', $vi['anmeldelser'], 4, "Navn | Tekst | 5"); ?>
+                        <p class="description">Én pr. linje: navn | tekst | stjerner (1–5). Giver også et samlet gennemsnit.</p></td></tr>
                 </table>
 
                 <h2 class="title">Sporing og leads</h2>
