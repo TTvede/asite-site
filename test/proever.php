@@ -191,6 +191,25 @@ p('uden præfiks: ingen hero-, SVG- eller scenelag-behandling',
 p('uden præfiks: billedattributter virker stadig (de er ikke præfiks-afhængige)', str_contains($uden, 'width="2000"'));
 saet();
 
+/* Google Fonts fra: Breakdance henter skrifter fra Google, når et element eller de globale indstillinger nævner en
+   Google-skrift. Husmodellens hm-grundlag.php slog det fra (HM_LOKALE_SKRIFTER) – ny.terrasse.nu hentede Inter, Bree
+   Serif og Oswald fra Google, da mu-plugins var væk (11-11-2026). */
+$gf = function (array $ekstra, array $get = []) {
+    remove_all_filters('breakdance_google_fonts_url');
+    saet($ekstra);
+    Asite_Site_Html::init();
+    $_GET = $get;
+    $ud = apply_filters('breakdance_google_fonts_url', 'https://fonts.googleapis.com/css2?family=Inter');
+    $_GET = [];
+    return $ud;
+};
+p('Google Fonts fra: Breakdance henter intet fra Google på siderne', $gf(['google_fonts_fra' => true]) === '');
+p('Google Fonts fra: i builderen hentes de stadig (redaktøren skal se skrifterne)',
+    $gf(['google_fonts_fra' => true], ['breakdance' => 'builder']) !== '');
+p('uden indstillingen røres Breakdances Google-skrifter ikke (pluginets standard)', $gf(['google_fonts_fra' => false]) !== '');
+remove_all_filters('breakdance_google_fonts_url');
+saet();
+
 /* ---------- 8. Sporing (B-258) ---------- */
 echo "8. Sporing\n";
 $spor = function (array $cfg, string $vaert = 'test.invalid') {

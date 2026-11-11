@@ -51,6 +51,13 @@ class Asite_Site_Html {
 
         add_action('template_redirect', [__CLASS__, 'start_buffer'], 4);
 
+        // Sitets skrifter ligger på sitet selv (GDPR: ingen IP-adresser til Google). Breakdance henter alligevel fra
+        // Google, når et element eller de globale indstillinger nævner en Google-skrift – på ny.terrasse.nu Inter, Bree
+        // Serif og Oswald (11-11-2026). I builderen hentes de stadig, så redaktøren ser skrifterne (som hm-grundlag.php).
+        if (!empty($s['google_fonts_fra'])) {
+            add_filter('breakdance_google_fonts_url', fn($url) => is_admin() || self::i_builder() ? $url : '');
+        }
+
         // Skrifter over folden hentes med det samme. Uden det opdager browseren dem først, når CSS'en er læst, og
         // teksten skifter skrift undervejs: på terrasse.nu voksede heroen på mobil, og USP-båndet hoppede (CLS 0,16–0,21,
         // 10-11-2026). Hent kun små filer – en stor skrift gjorde LCP 0,4 s langsommere.

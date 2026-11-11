@@ -32,6 +32,7 @@ class Asite_Site {
             'inline_svg'        => true,      // <img class="<præfiks>-svg"> → SVG-koden selv
             'scenelag'          => true,      // <præfiks>-lag får billedets filnavn som klasse
             'global_styles_fra'  => true,     // WordPress' global-styles i footeren (følger Breakdances Bloat Eliminator)
+            'google_fonts_fra'  => false,    // Breakdance henter ikke skrifter fra Google (sitet har dem selv – GDPR)
             'skrifter_forhaand' => '',        // skriftfiler, der hentes med det samme (preload) – én pr. linje
             // SEO/schema (hm-schema)
             'faq_schema'        => true,      // FAQPage fra Breakdance-træet

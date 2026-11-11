@@ -53,6 +53,7 @@ class Asite_Site_Admin {
             'inline_svg'        => !empty($p['inline_svg']),
             'scenelag'          => !empty($p['scenelag']),
             'global_styles_fra' => !empty($p['global_styles_fra']),
+            'google_fonts_fra'  => !empty($p['google_fonts_fra']),
             'skrifter_forhaand' => $tekst('skrifter_forhaand'),
             'faq_schema'        => !empty($p['faq_schema']),
             'altnavn'           => $linje('altnavn'),
@@ -195,6 +196,9 @@ class Asite_Site_Admin {
                     <tr><th scope="row">WordPress-CSS i footeren</th><td>
                         <?php self::tjek('global_styles_fra', $s['global_styles_fra'], 'Fjern WordPress\' global-styles fra footeren',
                             'Breakdances Bloat Eliminator fjerner den kun i <code>&lt;head&gt;</code>; WordPress lægger den på igen i footeren (ca. 9 kB pr. side). Følger Breakdances egen indstilling, så der kun er ét sted at slå til og fra.'); ?></td></tr>
+                    <tr><th scope="row">Google Fonts</th><td>
+                        <?php self::tjek('google_fonts_fra', $s['google_fonts_fra'], 'Breakdance henter ikke skrifter fra Google på siderne',
+                            'Slå til, når sitet har sine skrifter selv (@font-face i Breakdances globale stylesheet). Så sendes ingen besøgendes IP-adresse til Google (GDPR). I builderen hentes de stadig.'); ?></td></tr>
                     <tr><th scope="row">Hent skrifter med det samme</th><td>
                         <?php self::omraade('skrifter_forhaand', $s['skrifter_forhaand'], 3, "overskrift-600-latin.woff2"); ?>
                         <p class="description">Skriftfiler, browseren skal hente straks (preload), én pr. linje – et filnavn fra sitets egne skrifter
