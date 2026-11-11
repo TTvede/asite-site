@@ -204,6 +204,21 @@ p('ekstra schema skrives, og {home} bliver sitets adresse', str_contains($ud, '"
     && str_contains($ud, '"provider":{"@id":"https://test.invalid/#organization"}'));
 unset($GLOBALS['META']['42:_asite_schema']);
 
+/* og:image: Rank Math fandt intet billede på ny.terrasse.nu (ingen featured image) – live viste sidens hero.
+   Asite Site lægger sidens første billede fra Breakdance-træet ind, når Rank Math intet har. */
+class Proeve_OG { public $id = []; private $har; function __construct($har) { $this->har = $har; }
+    function has_images() { return $this->har; } function add_image_by_id($i) { $this->id[] = $i; } }
+$GLOBALS['META']['42:_breakdance_data'] = json_encode(['tree_json_string' => json_encode(['root' => ['id' => 1, 'data' => ['properties' => []], 'children' => [
+    ['id' => 2, 'data' => ['type' => 'EssentialElements\\Section', 'properties' => []], 'children' => [
+        ['id' => 3, 'data' => ['type' => 'EssentialElements\\FImage', 'properties' => ['content' => ['image' => ['from' => 'media_library', 'media' => ['id' => 71]]]]], 'children' => []],
+        ['id' => 4, 'data' => ['type' => 'EssentialElements\\FImage', 'properties' => ['content' => ['image' => ['media' => ['id' => 99]]]]], 'children' => []],
+    ]]]]])]);
+$og = new Proeve_OG(false); Asite_Site_Seo::og_billede($og);
+p('og:image: sidens første billede fra Breakdance-træet', $og->id === [71]);
+$og = new Proeve_OG(true); Asite_Site_Seo::og_billede($og);
+p('og:image: Rank Maths eget billede røres ikke', $og->id === []);
+unset($GLOBALS['META']['42:_breakdance_data']);
+
 /* ---------- 5. Roller ---------- */
 echo "5. Roller\n";
 $GLOBALS['POST_TYPE'][100] = 'breakdance_header';

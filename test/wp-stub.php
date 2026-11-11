@@ -52,6 +52,7 @@ function current_user_can($c) { return !empty($GLOBALS['ADMIN']); }
 function user_can($u, $c) { return !empty($GLOBALS['ADMIN']); }
 function get_post_type($id) { return $GLOBALS['POST_TYPE'][$id] ?? 'page'; }
 function wp_get_post_parent_id($id) { return $GLOBALS['FORAELDER'][$id] ?? 0; }
+function get_post_thumbnail_id($id = 0) { return $GLOBALS['THUMB'][$id] ?? 0; }
 function get_post_field($f, $id) { return $GLOBALS['POST_FIELD']["$id:$f"] ?? ''; }
 function get_post_time($f, $gmt = false, $id = 0) { return '2026-11-10T12:00:00+00:00'; }
 function remove_menu_page($s) { $GLOBALS['FJERNET_MENU'][] = $s; }

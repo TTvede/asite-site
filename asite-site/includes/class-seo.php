@@ -25,6 +25,12 @@ class Asite_Site_Seo {
         add_filter('rank_math/json_ld', [__CLASS__, 'rankmath_json_ld'], 99);
         add_action('wp_head', [__CLASS__, 'service_schema'], 31);
         add_action('wp_head', [__CLASS__, 'ekstra_schema'], 32);
+        // Delingsbillede: Rank Math finder kun featured image/standardbillede – husmodel-sider har sjældent et
+        // featured image, så ny.terrasse.nu delte uden billede (live viste sidens hero). 11-11-2026.
+        if (Asite_Site::i('og_billede', true)) {
+            add_action('rank_math/opengraph/facebook/add_additional_images', [__CLASS__, 'og_billede']);
+            add_action('rank_math/opengraph/twitter/add_additional_images', [__CLASS__, 'og_billede']);
+        }
     }
 
     /**
@@ -79,6 +85,28 @@ class Asite_Site_Seo {
      * (JSON: navn, type, omraader, omraade_type), som hm asite_site skriver ud fra sidens spec – live's
      * terrassenu-service-schema.php byggede det af ACF-felter, som builder-modellen ikke har (terrasse.nu 11-11-2026).
      */
+    /** Rank Maths billedobjekt: har siden intet billede, lægges featured image eller sidens første billede ind. */
+    public static function og_billede($billede) {
+        if (!is_object($billede) || $billede->has_images() || !is_singular()) { return; }
+        $id = self::foerste_billede(get_queried_object_id());
+        if ($id) { $billede->add_image_by_id($id); }
+    }
+
+    /** Featured image – ellers det første billede fra mediebiblioteket i sidens Breakdance-træ (hero'en). */
+    public static function foerste_billede($id): int {
+        $t = (int) get_post_thumbnail_id($id);
+        if ($t) { return $t; }
+        $d = json_decode((string) get_post_meta($id, '_breakdance_data', true), true);
+        $trae = json_decode((string) ($d['tree_json_string'] ?? ''), true);
+        $find = function ($n) use (&$find) {
+            $m = (int) ($n['data']['properties']['content']['image']['media']['id'] ?? 0);
+            if ($m) { return $m; }
+            foreach (($n['children'] ?? []) as $c) { if ($r = $find($c)) { return $r; } }
+            return 0;
+        };
+        return is_array($trae) && !empty($trae['root']) ? $find($trae['root']) : 0;
+    }
+
     /** Sidens egne schema-data (post meta »_asite_schema«: sidetype + ekstra), skrevet af hm asite_site ud fra specen. */
     private static function sidens_schema($id): array {
         $s = json_decode((string) get_post_meta($id, '_asite_schema', true), true);

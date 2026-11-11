@@ -62,6 +62,7 @@ class Asite_Site_Admin {
             'forfatter_url'     => esc_url_raw(trim($linje('forfatter_url'))),
             'forfatter_forael'  => trim($linje('forfatter_forael'), '/'),
             'artikler'          => $tekst('artikler'),
+            'og_billede'        => !empty($p['og_billede']),
             'dev_vaert'         => strtolower(preg_replace('#^https?://#', '', trim($linje('dev_vaert'), '/ '))),
             'gamle_adresser'    => $tekst('gamle_adresser'),
             'robots'            => !empty($p['robots']),
@@ -221,6 +222,8 @@ class Asite_Site_Admin {
                 <h2 class="title">Søgemaskiner og schema</h2>
                 <table class="form-table" role="presentation">
                     <tr><th scope="row">FAQ-schema</th><td>
+                        <?php self::tjek('og_billede', $s['og_billede'], 'Delingsbillede (og:image) fra sidens første billede, når Rank Math intet har',
+                            'Sider bygget i Breakdance har sjældent et »featured image«, så Facebook, LinkedIn og beskeder viste ingen forhåndsvisning.'); ?><br>
                         <?php self::tjek('faq_schema', $s['faq_schema'], 'Læg FAQPage-schema på sider med et FAQ-modul',
                             'Spørgsmålene og svarene læses fra siden selv, så schemaet altid er det, siden viser – også efter rettelser i builderen. Har siden sit eget FAQ-schema i Rank Math, lægges der intet til.'); ?></td></tr>
                     <tr><th scope="row">Alternativt navn</th><td>
