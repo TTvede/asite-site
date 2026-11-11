@@ -66,6 +66,7 @@ class Asite_Site_Admin {
             'standardbillede'   => $linje('standardbillede'),
             'site_altnavn'      => $linje('site_altnavn'),
             'forfattersider_fra' => !empty($p['forfattersider_fra']),
+            'forfattersider_til' => trim($linje('forfattersider_til')),
             'locations_kml'     => !empty($p['locations_kml']),
             'dev_vaert'         => strtolower(preg_replace('#^https?://#', '', trim($linje('dev_vaert'), '/ '))),
             'gamle_adresser'    => $tekst('gamle_adresser'),
@@ -87,7 +88,7 @@ class Asite_Site_Admin {
                 'tag' => strtoupper($linje('sp_tag')), 'ga4' => strtoupper($linje('sp_ga4')),
                 'ads' => strtoupper($linje('sp_ads')), 'meta' => preg_replace('/\D/', '', $linje('sp_meta')),
                 'ads_i_tag' => !empty($p['sp_ads_i_tag']),
-                'indlaes' => ($p['sp_indlaes'] ?? 'load') === 'straks' ? 'straks' : 'load',
+                'indlaes' => in_array($p['sp_indlaes'] ?? 'load', ['straks', 'interaktion'], true) ? $p['sp_indlaes'] : 'load',
                 'maks_ventetid' => max(0, (int) ($p['sp_maks_ventetid'] ?? 3000)),
                 'konverteringer' => $tekst('sp_konverteringer'),
                 'ga4_navne' => $tekst('sp_ga4_navne'),
@@ -250,7 +251,9 @@ class Asite_Site_Admin {
                         <p class="description">Billede fra mediebiblioteket til sider uden eget billede: delingsbillede (og:image) og sidens billede i schemaet.</p></td></tr>
                     <tr><th scope="row">Forfattersider</th><td>
                         <?php self::tjek('forfattersider_fra', $s['forfattersider_fra'], 'Slå forfattersider fra (404)',
-                            'WordPress viser ellers /author/&lt;brugernavn&gt;/ – og dermed brugernavnene til login.'); ?></td></tr>
+                            'WordPress viser ellers /author/&lt;brugernavn&gt;/ – og dermed brugernavnene til login.'); ?>
+                        <p>eller send dem videre (301) til <?php self::felt('forfattersider_til', $s['forfattersider_til'], 20, '/om-os/'); ?></p>
+                        <p class="description">En adresse her vinder over 404 – /author/… og ?author=N sendes direkte dertil, uden om brugernavnet.</p></td></tr>
                     <tr><th scope="row">Lokal søgning</th><td>
                         <?php self::tjek('locations_kml', $s['locations_kml'], 'locations.kml og local-sitemap.xml ud fra virksomhedens adresse',
                             'Som Rank Maths Local SEO-modul (kræver en adresse under »Virksomheden i schema«; står modulet til, laver det dem selv).'); ?></td></tr>
@@ -329,10 +332,12 @@ class Asite_Site_Admin {
                         <select name="sp_indlaes">
                             <option value="load" <?php selected($sp['indlaes'], 'load'); ?>>Efter at siden er indlæst (anbefalet)</option>
                             <option value="straks" <?php selected($sp['indlaes'], 'straks'); ?>>Straks</option>
+                            <option value="interaktion" <?php selected($sp['indlaes'], 'interaktion'); ?>>Ved første klik/scroll (bedst for PageSpeed)</option>
                         </select>
-                        <span style="margin-left:12px">senest <input type="number" name="sp_maks_ventetid" min="0" max="20000" value="<?php echo (int) $sp['maks_ventetid']; ?>" style="width:90px"> ms efter at HTML'en er læst</span>
+                        <span style="margin-left:12px">senest <input type="number" name="sp_maks_ventetid" min="0" max="20000" value="<?php echo (int) $sp['maks_ventetid']; ?>" style="width:90px"> ms efter at HTML'en er læst (»ved første klik/scroll«: efter at siden er indlæst)</span>
                         <p class="description">»Straks« blokerer sidens visning i op mod 250 ms på mobil. Loftet er til langsomme forbindelser, hvor
-                        »indlæst« først sker efter flere sekunder – så måles besøget alligevel.</p></td></tr>
+                        »indlæst« først sker efter flere sekunder – så måles besøget alligevel. »Ved første klik/scroll« giver den højeste
+                        PageSpeed-score, men besøg, der lukker siden inden for ventetiden uden at røre den, måles ikke.</p></td></tr>
                     <tr><th scope="row">Test-domæner</th><td>
                         <?php self::omraade('sp_test_domaener', $sp['test_domaener'], 3, "eksempel.dk"); ?>
                         <p class="description">Henvendelser fra mailadresser på disse domæner regnes som test og sendes ikke videre som kvalificerede leads.</p></td></tr>

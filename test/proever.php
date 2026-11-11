@@ -278,6 +278,18 @@ p('forfattersider: 404', $GLOBALS['wp_query']->er_404 && ($GLOBALS['STATUS'] ?? 
 $GLOBALS['FORFATTERSIDE'] = false; $GLOBALS['wp_query'] = new Proeve_Query(); unset($GLOBALS['STATUS']);
 Asite_Site_Seo::forfattersider();
 p('forfattersider: andre sider røres ikke', !$GLOBALS['wp_query']->er_404 && !isset($GLOBALS['STATUS']));
+/* … eller 301 til en fast side i ét hop (live terrasse.nu: /om-os/). */
+saet(['forfattersider_til' => '/om-os/']);
+$GLOBALS['FORFATTERSIDE'] = true; unset($GLOBALS['REDIRECT']);
+try { Asite_Site_Seo::forfattersider_videre(); } catch (RuntimeException $e) {}
+p('forfattersider: 301 til /om-os/', ($GLOBALS['REDIRECT'] ?? null) === ['https://test.invalid/om-os/', 301]);
+$GLOBALS['FORFATTERSIDE'] = false; $_GET['author'] = '1'; unset($GLOBALS['REDIRECT']);
+try { Asite_Site_Seo::forfattersider_videre(); } catch (RuntimeException $e) {}
+p('forfattersider: ?author=1 → /om-os/ direkte (brugernavnet vises ikke)', ($GLOBALS['REDIRECT'] ?? null) === ['https://test.invalid/om-os/', 301]);
+unset($_GET['author'], $GLOBALS['REDIRECT']);
+try { Asite_Site_Seo::forfattersider_videre(); } catch (RuntimeException $e) {}
+p('forfattersider: andre sider sendes ikke videre', !isset($GLOBALS['REDIRECT']));
+saet();
 
 /* ---------- 5. Roller ---------- */
 echo "5. Roller\n";
@@ -390,6 +402,13 @@ $ud = $spor(['tag' => 'GT-TEST1234', 'ads' => 'AW-123456789', 'ads_i_tag' => tru
 p('»straks« + Ads i tagget: én indlæsning, ingen ekstra Ads-config, ingen Meta',
     str_contains($ud, '<script async src="https://www.googletagmanager.com/gtag/js?id=GT-TEST1234"')
     && !str_contains($ud, 'config\',"AW-') && !str_contains($ud, 'asite-meta'));
+$ud = $spor($CFG + ['indlaes' => 'interaktion', 'maks_ventetid' => 5000]);
+p('»interaktion«: tagget hentes ved første klik/scroll eller 5 s efter load – ikke i HTML\'en',
+    str_contains($ud, "'pointerdown','keydown','touchstart','scroll','wheel'") && str_contains($ud, 'setTimeout(h,5000)')
+    && str_contains($ud, "addEventListener('load',t)") && !str_contains($ud, '<script async src="https://www.googletagmanager.com')
+    && !str_contains($ud, 'requestIdleCallback') && str_contains($ud, 'gtag(\'config\',"GT-TEST1234")'));
+$ud = $spor($CFG + ['indlaes' => 'noget-andet']);
+p('ukendt indlæsning → efter load (standarden)', str_contains($ud, 'requestIdleCallback'));
 p('intet på udviklingsadressen (tallene må ikke forurenes)', !str_contains($spor($CFG, 'ny.test.invalid'), '<script'));
 // Før lanceringen ER hjemmeadressen udviklingsadressen (ny.<domæne>). Husmodellens hm-sporing.php tillod kun HM_DOMAENE,
 // så sporingen var tavs dér; pluginet sporede på hjemmeadressen og ville have sendt testbesøg til live's konti

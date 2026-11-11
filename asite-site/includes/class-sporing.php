@@ -40,7 +40,7 @@ class Asite_Site_Sporing {
             'ads'   => $id('ads', '/^AW-[0-9]{6,15}$/'),
             'meta'  => $id('meta', '/^[0-9]{6,20}$/'),
             'ads_i_tag' => !empty($s['ads_i_tag']),
-            'indlaes' => ($s['indlaes'] ?? 'load') === 'straks' ? 'straks' : 'load',
+            'indlaes' => in_array($s['indlaes'] ?? 'load', ['straks', 'interaktion'], true) ? $s['indlaes'] : 'load',
             'maks_ventetid' => max(0, (int) ($s['maks_ventetid'] ?? 3000)),
             'konverteringer' => Asite_Site::par((string) ($s['konverteringer'] ?? '')),
             'ga4_navne' => Asite_Site::par((string) ($s['ga4_navne'] ?? '')),
@@ -114,6 +114,19 @@ if(t||q.get("utm_source")){["utm_source","utm_campaign","utm_term","utm_content"
         }
         if ($c['indlaes'] === 'straks') {
             echo '<script async src="' . esc_url($src) . "\"></script>\n<script id=\"asite-google-tag\">{$cfg}</script>\n";
+            return;
+        }
+        // »interaktion« (terrasse.nu 11-11-2026, ejerens valg): tagget hentes ved første klik, tryk, tast eller scroll – og
+        // ellers N ms efter load. PageSpeed rører aldrig siden, så dens måling slutter, før tagget kommer (forsiden 67–76 →
+        // ~95). Prisen: besøg, der lukker siden inden for N ms uden at røre den, måles ikke. Samtykke og hændelser står i
+        // dataLayer-køen fra første linje, så intet, der sker før tagget, tabes.
+        if ($c['indlaes'] === 'interaktion') {
+            $maks = $c['maks_ventetid'];
+            $ev = "['pointerdown','keydown','touchstart','scroll','wheel']";
+            echo "<script id=\"asite-google-tag\">{$cfg}(function(){var f=false,e={$ev};function h(){if(f)return;f=true;"
+               . "e.forEach(function(n){removeEventListener(n,h,{passive:true})});var s=document.createElement('script');s.async=true;s.src="
+               . wp_json_encode($src) . ";document.head.appendChild(s)}e.forEach(function(n){addEventListener(n,h,{passive:true})});"
+               . "function t(){setTimeout(h,{$maks})}document.readyState==='complete'?t():addEventListener('load',t)})();</script>\n";
             return;
         }
         // B-258: lige efter load (og når browseren har tid) – aldrig først ved klik/scroll. Loft: senest N ms efter at

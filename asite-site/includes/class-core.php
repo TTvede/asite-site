@@ -45,8 +45,9 @@ class Asite_Site {
             'og_billede'        => true,      // delingsbillede: featured image eller sidens første billede, når Rank Math intet har
             'standardbillede'   => '',        // billede til sider uden eget billede (filnavn eller id) – delingsbillede og schema
             'site_altnavn'      => '',        // alternateName på WebSite (fx firmanavnet med ApS)
-            'forfattersider_fra' => true,
-            'locations_kml'     => true,      // /locations.kml + local-sitemap.xml ud fra virksomhedens adresse (som Rank Maths Local SEO)     // /author/… og ?author=N giver 404 (brugernavnene vises ikke)
+            'forfattersider_fra' => true,     // /author/… og ?author=N giver 404 (brugernavnene vises ikke)
+            'forfattersider_til' => '',       // … eller 301 dertil (fx /om-os/ som live terrasse.nu); vinder over 404
+            'locations_kml'     => true,      // /locations.kml + local-sitemap.xml ud fra virksomhedens adresse (som Rank Maths Local SEO)
             // Lancering (hm-lancering)
             'dev_vaert'         => '',        // udviklingsadressen: 301 til domænet, når sitet er lanceret
             'gamle_adresser'    => '',        // én pr. linje: »<gammel sti> = <ny sti>«

@@ -36,8 +36,11 @@ class Asite_Site_Seo {
             add_action('parse_request', [__CLASS__, 'kml_fil'], 0);
             add_filter('rank_math/sitemap/index', [__CLASS__, 'kml_index']);
         }
-        // Forfattersider: live terrasse.nu gav 404; WordPress sender ?author=1 videre til /author/<brugernavn>/. 11-11-2026.
-        if (Asite_Site::i('forfattersider_fra', true)) {
+        // Forfattersider: WordPress sender ?author=1 videre til /author/<brugernavn>/. Enten 301 til en fast side i ét hop
+        // (live terrasse.nu: /om-os/, terrassenu-hardening.php) eller 404. 11-11-2026.
+        if (trim((string) Asite_Site::i('forfattersider_til', '')) !== '') {
+            add_action('template_redirect', [__CLASS__, 'forfattersider_videre'], 0);
+        } elseif (Asite_Site::i('forfattersider_fra', true)) {
             add_action('template_redirect', [__CLASS__, 'forfattersider'], 0);
         }
     }
@@ -102,6 +105,14 @@ class Asite_Site_Seo {
         if (!self::kml_aktiv()) { return $xml; }
         return $xml . "\t<sitemap>\n\t\t<loc>" . esc_url(untrailingslashit(home_url()) . '/local-sitemap.xml') . "</loc>\n\t\t<lastmod>"
             . self::kml_dato() . "</lastmod>\n\t</sitemap>\n";
+    }
+
+    /** Forfatterarkiver og ?author=N → 301 til den faste side – før WordPress når at vise brugernavnet i adressen. */
+    public static function forfattersider_videre() {
+        if (!is_author() && !(isset($_GET['author']) && $_GET['author'] !== '')) { return; }
+        $til = trim((string) Asite_Site::i('forfattersider_til', ''));
+        wp_redirect(preg_match('#^https?://#i', $til) ? $til : home_url('/' . ltrim($til, '/')), 301, 'Asite Site');
+        exit;
     }
 
     /** Forfatterarkiver findes ikke: 404, før WordPress når at omdirigere til /author/<brugernavn>/. */
