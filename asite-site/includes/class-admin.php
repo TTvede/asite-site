@@ -61,6 +61,7 @@ class Asite_Site_Admin {
             'forfatter_titel'   => $linje('forfatter_titel'),
             'forfatter_url'     => esc_url_raw(trim($linje('forfatter_url'))),
             'forfatter_forael'  => trim($linje('forfatter_forael'), '/'),
+            'artikler'          => $tekst('artikler'),
             'dev_vaert'         => strtolower(preg_replace('#^https?://#', '', trim($linje('dev_vaert'), '/ '))),
             'gamle_adresser'    => $tekst('gamle_adresser'),
             'robots'            => !empty($p['robots']),
@@ -231,6 +232,8 @@ class Asite_Site_Admin {
                         <?php self::felt('forfatter_url', $s['forfatter_url'], 30, 'https://… (forfatterens egen side)'); ?>
                         <p class="description">Sider under forælderen
                         <?php self::felt('forfatter_forael', $s['forfatter_forael'], 10, 'wiki'); ?>
+                        <p style="margin-top:10px">Kun artikler under: <?php self::omraade('artikler', $s['artikler'], 2, "wiki\ncases"); ?></p>
+                        <p class="description">Rank Math lægger »Article« på alle sider. Står der forældre her (én pr. linje), beholder kun deres undersider den. Tomt = Rank Maths standard.</p>
                         bliver <code>Article</code> med denne person som forfatter. Står navnet tomt, er virksomheden forfatter på alle sider.</p></td></tr>
                 </table>
 

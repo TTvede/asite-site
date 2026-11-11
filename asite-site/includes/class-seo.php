@@ -24,6 +24,7 @@ class Asite_Site_Seo {
         }
         add_filter('rank_math/json_ld', [__CLASS__, 'rankmath_json_ld'], 99);
         add_action('wp_head', [__CLASS__, 'service_schema'], 31);
+        add_action('wp_head', [__CLASS__, 'ekstra_schema'], 32);
     }
 
     /**
@@ -78,6 +79,23 @@ class Asite_Site_Seo {
      * (JSON: navn, type, omraader, omraade_type), som hm asite_site skriver ud fra sidens spec – live's
      * terrassenu-service-schema.php byggede det af ACF-felter, som builder-modellen ikke har (terrasse.nu 11-11-2026).
      */
+    /** Sidens egne schema-data (post meta »_asite_schema«: sidetype + ekstra), skrevet af hm asite_site ud fra specen. */
+    private static function sidens_schema($id): array {
+        $s = json_decode((string) get_post_meta($id, '_asite_schema', true), true);
+        return is_array($s) ? $s : [];
+    }
+
+    /** Ekstra JSON-LD fra sidens spec – fx prisberegnerens WebApplication (live: terrassenu-webapp-schema.php). */
+    public static function ekstra_schema() {
+        if (!is_singular('page')) { return; }
+        foreach ((array) (self::sidens_schema(get_queried_object_id())['ekstra'] ?? []) as $obj) {
+            if (!is_array($obj) || empty($obj['@type'])) { continue; }
+            $json = str_replace('{home}', untrailingslashit(home_url('/')), wp_json_encode(['@context' => 'https://schema.org'] + $obj,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            echo '<script type="application/ld+json" class="asite-schema">' . $json . "</script>\n";
+        }
+    }
+
     public static function service_schema() {
         if (!is_singular('page')) { return; }
         $id = get_queried_object_id();
@@ -192,6 +210,23 @@ class Asite_Site_Seo {
         }
         if (!is_singular('page')) { return $data; }
         $id = get_queried_object_id();
+        // Kun artikler beholder Rank Maths Article (når indstillingen er sat).
+        $art = array_filter(array_map(fn($x) => trim($x, '/ '), preg_split('/[\s,]+/', (string) Asite_Site::i('artikler', ''))));
+        if ($art) {
+            $far = (int) wp_get_post_parent_id($id);
+            if (!$far || !in_array(get_post_field('post_name', $far), $art, true)) {
+                foreach ($data as $k => $node) {
+                    if (is_array($node) && array_intersect((array) ($node['@type'] ?? []), ['Article', 'BlogPosting', 'NewsArticle'])) { unset($data[$k]); }
+                }
+            }
+        }
+        // Sidetype (ContactPage, AboutPage, CollectionPage …) på Rank Maths WebPage-node.
+        $type = preg_replace('/[^A-Za-z]/', '', (string) (self::sidens_schema($id)['sidetype'] ?? ''));
+        if ($type !== '') {
+            foreach ($data as $k => $node) {
+                if (is_array($node) && ($node['@type'] ?? '') === 'WebPage') { $data[$k]['@type'] = $type; break; }
+            }
+        }
         $artikel = self::er_artikel($id);
         $pid = home_url('/#forfatter');
         $forfatter = $artikel ? ['@id' => $pid] : ['@id' => home_url('/#organization')];

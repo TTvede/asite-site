@@ -182,6 +182,26 @@ p('Service: dækningsområderne som byer', str_contains($ud, '{"@type":"City","n
 unset($GLOBALS['META']['42:_asite_service']);
 p('Service: intet uden sidens data', !str_contains(kor('wp_head'), '"Service"'));
 
+/* Artikler: Rank Math lægger Article på ALLE sider som standard. Live terrasse.nu havde det kun på wiki og cases. */
+$graf = ['side' => ['@type' => 'WebPage', '@id' => 'https://test.invalid/en-side/#webpage'],
+         'richSnippet' => ['@type' => 'Article', '@id' => 'https://test.invalid/en-side/#richSnippet', 'author' => []]];
+p('artikler: tom indstilling rører intet (andre sites uændrede)', isset(Asite_Site_Seo::rankmath_json_ld($graf)['richSnippet']));
+saet(['artikler' => "wiki\ncases"]);
+p('artikler: Article fjernet på en side uden for wiki/cases', !isset(Asite_Site_Seo::rankmath_json_ld($graf)['richSnippet']));
+$GLOBALS['FORAELDER'][42] = 9; $GLOBALS['POST_FIELD']['9:post_name'] = 'cases';
+p('artikler: Article bevaret på en case', isset(Asite_Site_Seo::rankmath_json_ld($graf)['richSnippet']));
+unset($GLOBALS['FORAELDER'][42]);
+saet();
+
+/* Sidetype og ekstra schema pr. side (spec: schema:) – fx ContactPage og prisberegnerens WebApplication. */
+$GLOBALS['META']['42:_asite_schema'] = json_encode(['sidetype' => 'ContactPage',
+    'ekstra' => [['@type' => 'WebApplication', 'name' => 'Beregner', 'provider' => ['@id' => '{home}/#organization']]]]);
+p('sidetype: WebPage-noden får sidens type', Asite_Site_Seo::rankmath_json_ld($graf)['side']['@type'] === 'ContactPage');
+$ud = kor('wp_head');
+p('ekstra schema skrives, og {home} bliver sitets adresse', str_contains($ud, '"@type":"WebApplication"')
+    && str_contains($ud, '"provider":{"@id":"https://test.invalid/#organization"}'));
+unset($GLOBALS['META']['42:_asite_schema']);
+
 /* ---------- 5. Roller ---------- */
 echo "5. Roller\n";
 $GLOBALS['POST_TYPE'][100] = 'breakdance_header';

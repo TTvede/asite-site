@@ -40,7 +40,8 @@ class Asite_Site {
             'forfatter_navn'    => '',        // navngiven forfatter på wiki-artikler (tom = altid virksomheden)
             'forfatter_titel'   => '',
             'forfatter_url'     => '',        // forfatterens egen side (Person.url i schemaet)
-            'forfatter_forael'  => 'wiki',    // sider under denne forælder-slug er artikler med forfatter
+            'forfatter_forael'  => 'wiki',
+            'artikler'          => '',        // forældre-slugs, hvis sider er artikler; ellers fjernes Rank Maths Article (tom = rør intet)    // sider under denne forælder-slug er artikler med forfatter
             // Lancering (hm-lancering)
             'dev_vaert'         => '',        // udviklingsadressen: 301 til domænet, når sitet er lanceret
             'gamle_adresser'    => '',        // én pr. linje: »<gammel sti> = <ny sti>«
