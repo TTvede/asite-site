@@ -193,6 +193,13 @@ p('artikler: Article bevaret på en case', isset(Asite_Site_Seo::rankmath_json_l
 unset($GLOBALS['FORAELDER'][42]);
 saet(['artikler' => "wiki\n/en-side/"]);
 p('artikler: en enkelt side (/sti/) beholder Article', isset(Asite_Site_Seo::rankmath_json_ld($graf)['richSnippet']));
+p('artikler: uden forfatternavn er virksomheden forfatter', (Asite_Site_Seo::rankmath_json_ld($graf)['richSnippet']['author']['@id'] ?? '') === 'https://test.invalid/#organization');
+saet(['artikler' => "wiki\n/en-side/", 'forfatter_navn' => 'Timme']);
+$r = Asite_Site_Seo::rankmath_json_ld($graf);
+p('artikler: en artikel uden for wiki får den navngivne forfatter (som live)', ($r['richSnippet']['author']['@id'] ?? '') === 'https://test.invalid/#forfatter'
+    && ($r['asite_forfatter']['name'] ?? '') === 'Timme');
+saet(['artikler' => "wiki", 'forfatter_navn' => 'Timme']);
+p('artikler: en side uden for listen får ingen forfatter-Person', !isset(Asite_Site_Seo::rankmath_json_ld($graf)['asite_forfatter']));
 saet();
 
 /* Sidetype og ekstra schema pr. side (spec: schema:) – fx ContactPage og prisberegnerens WebApplication. */
@@ -217,7 +224,60 @@ $og = new Proeve_OG(false); Asite_Site_Seo::og_billede($og);
 p('og:image: sidens første billede fra Breakdance-træet', $og->id === [71]);
 $og = new Proeve_OG(true); Asite_Site_Seo::og_billede($og);
 p('og:image: Rank Maths eget billede røres ikke', $og->id === []);
+saet(['standardbillede' => 'foto.avif']);
+$og = new Proeve_OG(false); Asite_Site_Seo::og_billede($og);
+p('og:image: sidens eget billede går forud for standardbilledet', $og->id === [71]);
 unset($GLOBALS['META']['42:_breakdance_data']);
+$og = new Proeve_OG(false); Asite_Site_Seo::og_billede($og);
+p('og:image: standardbilledet (filnavn → id) på en side uden billede', $og->id === [7]);
+saet(['standardbillede' => '7']);
+p('standardbillede: et id virker også', Asite_Site_Seo::standardbillede() === 7);
+saet();
+p('standardbillede: tomt = intet', Asite_Site_Seo::standardbillede() === 0);
+
+/* Live's Rank Math (med Local SEO og standardbillede) havde felter, ny manglede (QA 11-11-2026). */
+$graf = ['org' => ['@type' => 'Organization', '@id' => 'https://test.invalid/#organization', 'logo' => ['@type' => 'ImageObject', '@id' => 'https://test.invalid/#logo']],
+         'site' => ['@type' => 'WebSite', '@id' => 'https://test.invalid/#website'],
+         'side' => ['@type' => 'WebPage', '@id' => 'https://test.invalid/en-side/#webpage'],
+         'richSnippet' => ['@type' => 'Article', '@id' => 'https://test.invalid/en-side/#richSnippet']];
+saet(['site_altnavn' => 'Test ApS', 'standardbillede' => 'foto.avif', 'virksomhed' => ['gade' => 'Vej 1', 'by' => 'Byen']]);
+$r = Asite_Site_Seo::rankmath_json_ld($graf);
+p('WebSite: alternativt navn', ($r['site']['alternateName'] ?? '') === 'Test ApS');
+p('virksomhed: url og image (logoet)', ($r['org']['url'] ?? '') === 'https://test.invalid' && ($r['org']['image']['@id'] ?? '') === 'https://test.invalid/#logo');
+p('virksomhed: adressen som Place og location', ($r['asite_place']['@type'] ?? '') === 'Place' && ($r['asite_place']['address']['streetAddress'] ?? '') === 'Vej 1'
+    && ($r['org']['location']['@id'] ?? '') === 'https://test.invalid/#place');
+$u = 'https://test.invalid/wp-content/uploads/2026/11/foto.avif';
+p('sidens billede: ImageObject med mål og alt-tekst', ($r['asite_billede']['@id'] ?? '') === $u && $r['asite_billede']['width'] === '2000'
+    && $r['asite_billede']['caption'] === 'Et møderum med projektor' && $r['asite_billede']['inLanguage'] === 'da-DK');
+p('sidens billede: primaryImageOfPage og Article image', ($r['side']['primaryImageOfPage']['@id'] ?? '') === $u && ($r['richSnippet']['image']['@id'] ?? '') === $u);
+$graf['side']['primaryImageOfPage'] = ['@id' => 'rm'];
+p('sidens billede: Rank Maths eget billede røres ikke', !isset(Asite_Site_Seo::rankmath_json_ld($graf)['asite_billede']));
+saet();
+$r = Asite_Site_Seo::rankmath_json_ld($graf);
+p('uden indstillinger: intet Place, intet billede, intet alternativt navn', !isset($r['asite_place']) && !isset($r['asite_billede']) && !isset($r['site']['alternateName']));
+
+/* locations.kml + local-sitemap.xml: live havde dem fra Rank Maths Local SEO (slået fra på ny). */
+saet();
+p('kml: intet uden en adresse', Asite_Site_Seo::kml_svar('/locations.kml') === null);
+saet(['virksomhed' => ['gade' => 'Vej 1', 'by' => 'Byen', 'postnr' => '2800', 'land' => 'DK', 'telefon' => '+45 1', 'geo' => '55.79, 12.50']]);
+$k = Asite_Site_Seo::kml_svar('/locations.kml');
+p('kml: navn, adresse, telefon og koordinater', str_contains($k, '<name><![CDATA[TestNu]]></name>') && str_contains($k, '<![CDATA[Vej 1, Byen, 2800, DK]]>')
+    && str_contains($k, '<![CDATA[+45 1]]>') && str_contains($k, '<coordinates>12.50,55.79,0</coordinates>'));
+p('kml: gyldig XML', (bool) simplexml_load_string($k));
+$sm = Asite_Site_Seo::kml_svar('/local-sitemap.xml');
+p('kml: local-sitemap peger på locations.kml', str_contains($sm, '<loc>https://test.invalid/locations.kml</loc>') && (bool) simplexml_load_string($sm));
+p('kml: sitemap-indekset får local-sitemap', str_contains(Asite_Site_Seo::kml_index(''), 'https://test.invalid/local-sitemap.xml'));
+p('kml: andre adresser røres ikke', Asite_Site_Seo::kml_svar('/kontakt/') === null);
+saet();
+p('kml: indekset røres ikke uden adresse', Asite_Site_Seo::kml_index('x') === 'x');
+
+/* Forfattersider: live gav 404, ny sendte ?author=1 videre til /author/<brugernavn>/. */
+$GLOBALS['FORFATTERSIDE'] = true;
+Asite_Site_Seo::forfattersider();
+p('forfattersider: 404', $GLOBALS['wp_query']->er_404 && ($GLOBALS['STATUS'] ?? 0) === 404);
+$GLOBALS['FORFATTERSIDE'] = false; $GLOBALS['wp_query'] = new Proeve_Query(); unset($GLOBALS['STATUS']);
+Asite_Site_Seo::forfattersider();
+p('forfattersider: andre sider røres ikke', !$GLOBALS['wp_query']->er_404 && !isset($GLOBALS['STATUS']));
 
 /* ---------- 5. Roller ---------- */
 echo "5. Roller\n";

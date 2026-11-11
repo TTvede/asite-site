@@ -63,6 +63,10 @@ class Asite_Site_Admin {
             'forfatter_forael'  => trim($linje('forfatter_forael'), '/'),
             'artikler'          => $tekst('artikler'),
             'og_billede'        => !empty($p['og_billede']),
+            'standardbillede'   => $linje('standardbillede'),
+            'site_altnavn'      => $linje('site_altnavn'),
+            'forfattersider_fra' => !empty($p['forfattersider_fra']),
+            'locations_kml'     => !empty($p['locations_kml']),
             'dev_vaert'         => strtolower(preg_replace('#^https?://#', '', trim($linje('dev_vaert'), '/ '))),
             'gamle_adresser'    => $tekst('gamle_adresser'),
             'robots'            => !empty($p['robots']),
@@ -235,9 +239,21 @@ class Asite_Site_Admin {
                         <?php self::felt('forfatter_url', $s['forfatter_url'], 30, 'https://… (forfatterens egen side)'); ?>
                         <p class="description">Sider under forælderen
                         <?php self::felt('forfatter_forael', $s['forfatter_forael'], 10, 'wiki'); ?>
+                        bliver <code>Article</code> med denne person som forfatter – og det gør alle sider i listen herunder. Står navnet tomt, er virksomheden forfatter på alle sider.</p>
                         <p style="margin-top:10px">Kun artikler under: <?php self::omraade('artikler', $s['artikler'], 2, "wiki\ncases"); ?></p>
-                        <p class="description">Rank Math lægger »Article« på alle sider. Står der forældre her (én pr. linje), beholder kun deres undersider den – og enkelte sider skrevet som <code>/sti/</code>. Tomt = Rank Maths standard.</p>
-                        bliver <code>Article</code> med denne person som forfatter. Står navnet tomt, er virksomheden forfatter på alle sider.</p></td></tr>
+                        <p class="description">Rank Math lægger »Article« på alle sider. Står der forældre her (én pr. linje), beholder kun deres undersider den – og enkelte sider skrevet som <code>/sti/</code>. Tomt = Rank Maths standard.</p></td></tr>
+                    <tr><th scope="row">Sitets alternative navn</th><td>
+                        <?php self::felt('site_altnavn', $s['site_altnavn'], 30, 'Firma ApS'); ?>
+                        <p class="description">Kommer med som <code>alternateName</code> på websitet i schemaet (fx det fulde firmanavn). Google kan bruge det som sitets navn i søgeresultaterne.</p></td></tr>
+                    <tr><th scope="row">Standardbillede</th><td>
+                        <?php self::felt('standardbillede', $s['standardbillede'], 30, 'filnavn.avif eller id'); ?>
+                        <p class="description">Billede fra mediebiblioteket til sider uden eget billede: delingsbillede (og:image) og sidens billede i schemaet.</p></td></tr>
+                    <tr><th scope="row">Forfattersider</th><td>
+                        <?php self::tjek('forfattersider_fra', $s['forfattersider_fra'], 'Slå forfattersider fra (404)',
+                            'WordPress viser ellers /author/&lt;brugernavn&gt;/ – og dermed brugernavnene til login.'); ?></td></tr>
+                    <tr><th scope="row">Lokal søgning</th><td>
+                        <?php self::tjek('locations_kml', $s['locations_kml'], 'locations.kml og local-sitemap.xml ud fra virksomhedens adresse',
+                            'Som Rank Maths Local SEO-modul (kræver en adresse under »Virksomheden i schema«; står modulet til, laver det dem selv).'); ?></td></tr>
                 </table>
 
                 <h2 class="title">Omdirigeringer og robots.txt</h2>

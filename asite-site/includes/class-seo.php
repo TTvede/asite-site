@@ -31,6 +31,116 @@ class Asite_Site_Seo {
             add_action('rank_math/opengraph/facebook/add_additional_images', [__CLASS__, 'og_billede']);
             add_action('rank_math/opengraph/twitter/add_additional_images', [__CLASS__, 'og_billede']);
         }
+        // locations.kml + local-sitemap.xml: live terrasse.nu havde dem fra Rank Maths Local SEO (slået fra på ny). 11-11-2026.
+        if (Asite_Site::i('locations_kml', true)) {
+            add_action('parse_request', [__CLASS__, 'kml_fil'], 0);
+            add_filter('rank_math/sitemap/index', [__CLASS__, 'kml_index']);
+        }
+        // Forfattersider: live terrasse.nu gav 404; WordPress sender ?author=1 videre til /author/<brugernavn>/. 11-11-2026.
+        if (Asite_Site::i('forfattersider_fra', true)) {
+            add_action('template_redirect', [__CLASS__, 'forfattersider'], 0);
+        }
+    }
+
+    /** Rank Maths eget Local SEO-modul laver filerne selv – så rører vi dem ikke. */
+    private static function kml_aktiv(): bool {
+        if (class_exists('\\RankMath\\Helper') && \RankMath\Helper::is_module_active('local-seo')) { return false; }
+        $v = (array) Asite_Site::i('virksomhed', []);
+        return trim((string) ($v['gade'] ?? '')) !== '' || trim((string) ($v['by'] ?? '')) !== '';
+    }
+
+    private static function cdata(string $s): string {
+        return '<![CDATA[' . str_replace(']]>', ']]]]><![CDATA[>', $s) . ']]>';
+    }
+
+    /** Svaret for /locations.kml og /local-sitemap.xml (ellers null) – som Rank Maths Local SEO, men med koordinaterne. */
+    public static function kml_svar(string $sti): ?string {
+        $sti = strtolower('/' . ltrim($sti, '/'));
+        if (!in_array($sti, ['/locations.kml', '/local-sitemap.xml'], true) || !self::kml_aktiv()) { return null; }
+        $hjem = untrailingslashit(home_url());
+        if ($sti === '/local-sitemap.xml') {
+            return '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n"
+                . "\t<url>\n\t\t<loc>" . esc_url($hjem . '/locations.kml') . "</loc>\n\t\t<lastmod>" . self::kml_dato() . "</lastmod>\n\t</url>\n</urlset>\n";
+        }
+        $v = (array) Asite_Site::i('virksomhed', []);
+        $f = fn($k) => trim((string) ($v[$k] ?? ''));
+        $navn = (string) get_bloginfo('name');
+        $adr = implode(', ', array_filter([$f('gade'), $f('by'), $f('region'), $f('postnr'), $f('land')]));
+        $punkt = '';
+        if (preg_match('/^\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*$/', $f('geo'), $m)) {
+            $punkt = "\n\t\t\t\t\t<coordinates>{$m[2]},{$m[1]},0</coordinates>\n\t\t\t\t";
+        }
+        $l = '<atom:link href="' . esc_url($hjem) . '"/>';
+        return '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
+            . '<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">' . "\n"
+            . "\t<Document>\n\t\t<name>" . esc_html('Locations for ' . $navn) . "</name>\n\t\t<open>1</open>\n\t\t<Folder>\n\t\t\t$l\n"
+            . "\t\t\t<Placemark>\n\t\t\t\t<name>" . self::cdata($navn) . "</name>\n"
+            . ($f('beskrivelse') !== '' ? "\t\t\t\t<description>" . self::cdata($f('beskrivelse')) . "</description>\n" : '')
+            . "\t\t\t\t<address>" . self::cdata($adr) . "</address>\n"
+            . ($f('telefon') !== '' ? "\t\t\t\t<phoneNumber>" . self::cdata($f('telefon')) . "</phoneNumber>\n" : '')
+            . "\t\t\t\t$l\n\t\t\t\t<Point>$punkt</Point>\n\t\t\t</Placemark>\n\t\t</Folder>\n\t</Document>\n</kml>\n";
+    }
+
+    /** Sidst ændret: forsidens ændringsdato (virksomhedens data ændres sjældent og har ingen egen dato). */
+    private static function kml_dato(): string {
+        $id = (int) get_option('page_on_front');
+        $t = $id ? get_post_modified_time('c', true, $id) : '';
+        return $t ?: gmdate('c');
+    }
+
+    public static function kml_fil() {
+        $svar = self::kml_svar((string) wp_parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
+        if ($svar === null) { return; }
+        status_header(200);
+        header('Content-Type: text/xml; charset=UTF-8');
+        echo $svar;
+        exit;
+    }
+
+    /** local-sitemap.xml i Rank Maths sitemap-indeks (som på live). */
+    public static function kml_index($xml) {
+        if (!self::kml_aktiv()) { return $xml; }
+        return $xml . "\t<sitemap>\n\t\t<loc>" . esc_url(untrailingslashit(home_url()) . '/local-sitemap.xml') . "</loc>\n\t\t<lastmod>"
+            . self::kml_dato() . "</lastmod>\n\t</sitemap>\n";
+    }
+
+    /** Forfatterarkiver findes ikke: 404, før WordPress når at omdirigere til /author/<brugernavn>/. */
+    public static function forfattersider() {
+        if (!is_author()) { return; }
+        global $wp_query;
+        $wp_query->set_404();
+        status_header(404);
+        nocache_headers();
+    }
+
+    /** Standardbilledet (indstillingen er et id eller et filnavn fra mediebiblioteket) → id, eller 0. */
+    public static function standardbillede(): int {
+        return (int) Asite_Site::husk('standardbillede', function () {
+            $v = trim((string) Asite_Site::i('standardbillede', ''));
+            if ($v === '') { return 0; }
+            if (ctype_digit($v)) { return (int) $v; }
+            global $wpdb;
+            $fil = basename($v);
+            return (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND (meta_value = %s OR meta_value LIKE %s) ORDER BY post_id LIMIT 1",
+                $fil, '%/' . $wpdb->esc_like($fil)));
+        });
+    }
+
+    /** Sidens billede: featured image, sidens første billede – ellers standardbilledet. */
+    public static function sidens_billede($id): int {
+        return self::foerste_billede($id) ?: self::standardbillede();
+    }
+
+    /** ImageObject som Rank Maths (live): @id = billedets adresse, billedteksten fra alt-teksten. */
+    private static function billede_node(int $bid): array {
+        $src = wp_get_attachment_image_src($bid, 'full');
+        if (!$src || empty($src[0])) { return []; }
+        $tekst = trim((string) get_post_meta($bid, '_wp_attachment_image_alt', true));
+        if ($tekst === '') { $tekst = trim((string) wp_get_attachment_caption($bid)); }
+        return array_filter(['@type' => 'ImageObject', '@id' => $src[0], 'url' => $src[0],
+            'width' => $src[1] ? (string) $src[1] : '', 'height' => $src[2] ? (string) $src[2] : '',
+            'caption' => $tekst, 'inLanguage' => (string) get_bloginfo('language')], fn($x) => $x !== '');
     }
 
     /**
@@ -88,7 +198,7 @@ class Asite_Site_Seo {
     /** Rank Maths billedobjekt: har siden intet billede, lægges featured image eller sidens første billede ind. */
     public static function og_billede($billede) {
         if (!is_object($billede) || $billede->has_images() || !is_singular()) { return; }
-        $id = self::foerste_billede(get_queried_object_id());
+        $id = self::sidens_billede(get_queried_object_id());
         if ($id) { $billede->add_image_by_id($id); }
     }
 
@@ -204,12 +314,79 @@ class Asite_Site_Seo {
         echo '<script type="application/ld+json" id="asite-faqpage">' . wp_json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "</script>\n";
     }
 
-    /** Sider under denne forælder (fx /wiki/) er artikler med en navngiven forfatter. */
-    private static function er_artikel($id): bool {
-        $slug = trim((string) Asite_Site::i('forfatter_forael', 'wiki'), '/');
-        if ($slug === '' || !Asite_Site::i('forfatter_navn')) { return false; }
+    /**
+     * Matcher siden en liste af forælder-slugs (»wiki« = undersider af wiki) og stier (»/sti/« = netop den side)?
+     * Bruges af »artikler« og af forfatteren.
+     */
+    private static function i_listen($id, array $liste): bool {
+        if (!$liste) { return false; }
         $far = (int) wp_get_post_parent_id($id);
-        return $far && get_post_field('post_name', $far) === $slug;
+        $sti = '/' . trim((string) wp_parse_url(get_permalink($id), PHP_URL_PATH), '/') . '/';
+        $stier = array_map(fn($x) => '/' . trim($x, '/') . '/', array_filter($liste, fn($x) => $x[0] === '/'));
+        return in_array($sti, $stier, true)
+            || ($far && in_array(get_post_field('post_name', $far), array_filter($liste, fn($x) => $x[0] !== '/'), true));
+    }
+
+    private static function artikel_liste(): array {
+        return array_values(array_filter(array_map('trim', preg_split('/[\s,]+/', (string) Asite_Site::i('artikler', '')))));
+    }
+
+    /**
+     * Artikler med en navngiven forfatter: undersider af »forfatter_forael« (fx /wiki/) – og, når »artikler« er sat,
+     * alle sider, der beholder Article. Live terrasse.nu havde forfatteren på pleje, cases og tidligere blogindlæg
+     * (QA 11-11-2026); ellers stod virksomheden som forfatter dér.
+     */
+    private static function er_artikel($id): bool {
+        if (!Asite_Site::i('forfatter_navn')) { return false; }
+        $slug = trim((string) Asite_Site::i('forfatter_forael', 'wiki'), '/');
+        return ($slug !== '' && self::i_listen($id, [$slug])) || self::i_listen($id, self::artikel_liste());
+    }
+
+    /**
+     * Det, live's Rank Math (med Local SEO) havde, og som ny ikke fik (QA 11-11-2026): WebSite alternateName,
+     * virksomhedens url og image (logoet), og adressen som Place med location fra virksomheden.
+     */
+    private static function graf_som_live(array $data): array {
+        $hjem = untrailingslashit(home_url());
+        $alt = trim((string) Asite_Site::i('site_altnavn', ''));
+        foreach ($data as $k => $node) {
+            if (!is_array($node)) { continue; }
+            $typer = (array) ($node['@type'] ?? []);
+            if ($alt !== '' && in_array('WebSite', $typer, true) && empty($node['alternateName'])) {
+                $data[$k]['alternateName'] = $alt;
+            }
+            if (($node['@id'] ?? '') !== home_url('/#organization')) { continue; }
+            if (empty($node['url'])) { $data[$k]['url'] = $hjem; }
+            if (empty($node['image']) && !empty($node['logo']['@id'])) { $data[$k]['image'] = ['@id' => $node['logo']['@id']]; }
+            if (!empty($node['address']) && empty($node['location'])) {
+                $pid = home_url('/#place');
+                $har_place = false;
+                foreach ($data as $n) { if (is_array($n) && ($n['@id'] ?? '') === $pid) { $har_place = true; } }
+                if (!$har_place) { $data['asite_place'] = ['@type' => 'Place', '@id' => $pid, 'address' => $node['address']]; }
+                $data[$k]['location'] = ['@id' => $pid];
+            }
+        }
+        return $data;
+    }
+
+    /** Sidens billede som ImageObject, primaryImageOfPage og Article image – når Rank Math intet billede fandt. */
+    private static function sidens_billede_i_graf(array $data, int $id): array {
+        $side = null;
+        foreach ($data as $k => $node) {
+            if (is_array($node) && substr((string) ($node['@id'] ?? ''), -8) === '#webpage') { $side = $k; break; }
+        }
+        if ($side === null || !empty($data[$side]['primaryImageOfPage'])) { return $data; }
+        $bid = self::sidens_billede($id);
+        $billede = $bid ? self::billede_node($bid) : [];
+        if (!$billede) { return $data; }
+        $data['asite_billede'] = $billede;
+        $data[$side]['primaryImageOfPage'] = ['@id' => $billede['@id']];
+        foreach ($data as $k => $node) {
+            if (is_array($node) && array_intersect((array) ($node['@type'] ?? []), ['Article', 'BlogPosting', 'NewsArticle']) && empty($node['image'])) {
+                $data[$k]['image'] = ['@id' => $billede['@id']];
+            }
+        }
+        return $data;
     }
 
     public static function rankmath_json_ld($data) {
@@ -236,17 +413,15 @@ class Asite_Site_Seo {
                 break;   // kun den primære virksomheds-node
             }
         }
+        $data = self::graf_som_live($data);
+        if (is_singular()) { $data = self::sidens_billede_i_graf($data, (int) get_queried_object_id()); }
         if (!is_singular('page')) { return $data; }
         $id = get_queried_object_id();
         // Kun artikler beholder Rank Maths Article (når indstillingen er sat).
         // »wiki« = undersider af wiki; »/sti/« = netop den side (fx et tidligere blogindlæg, der nu er en topside).
-        $art = array_filter(array_map('trim', preg_split('/[\s,]+/', (string) Asite_Site::i('artikler', ''))));
+        $art = self::artikel_liste();
         if ($art) {
-            $far = (int) wp_get_post_parent_id($id);
-            $sti = '/' . trim((string) wp_parse_url(get_permalink($id), PHP_URL_PATH), '/') . '/';
-            $er_art = in_array($sti, array_map(fn($x) => '/' . trim($x, '/') . '/', array_filter($art, fn($x) => $x[0] === '/')), true)
-                || ($far && in_array(get_post_field('post_name', $far), array_filter($art, fn($x) => $x[0] !== '/'), true));
-            if (!$er_art) {
+            if (!self::i_listen($id, $art)) {
                 foreach ($data as $k => $node) {
                     if (is_array($node) && array_intersect((array) ($node['@type'] ?? []), ['Article', 'BlogPosting', 'NewsArticle'])) { unset($data[$k]); }
                 }

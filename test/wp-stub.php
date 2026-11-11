@@ -52,6 +52,18 @@ function current_user_can($c) { return !empty($GLOBALS['ADMIN']); }
 function user_can($u, $c) { return !empty($GLOBALS['ADMIN']); }
 function get_post_type($id) { return $GLOBALS['POST_TYPE'][$id] ?? 'page'; }
 function wp_get_post_parent_id($id) { return $GLOBALS['FORAELDER'][$id] ?? 0; }
+function is_author() { return !empty($GLOBALS['FORFATTERSIDE']); }
+function status_header($s) { $GLOBALS['STATUS'] = $s; }
+function nocache_headers() {}
+class Proeve_Query { public $er_404 = false; function set_404() { $this->er_404 = true; } }
+$GLOBALS['wp_query'] = new Proeve_Query();
+function get_bloginfo($n = '') { return $n === 'language' ? 'da-DK' : ($n === 'name' ? 'TestNu' : ''); }
+function get_post_modified_time($f = 'U', $gmt = false, $id = 0) { return '2026-09-05T07:26:34+00:00'; }
+function wp_get_attachment_caption($id) { return $GLOBALS['BILLED_TEKST'][$id] ?? ''; }
+function wp_get_attachment_image_src($id, $size = 'thumbnail') {
+    $m = $GLOBALS['BILLED_META'][$id] ?? null;
+    return $m ? [$GLOBALS['HOME'] . '/wp-content/uploads/' . $m['file'], $m['width'], $m['height'], false] : false;
+}
 function get_post_thumbnail_id($id = 0) { return $GLOBALS['THUMB'][$id] ?? 0; }
 function get_post_field($f, $id) { return $GLOBALS['POST_FIELD']["$id:$f"] ?? ''; }
 function get_post_time($f, $gmt = false, $id = 0) { return '2026-11-10T12:00:00+00:00'; }
@@ -132,6 +144,8 @@ class Proeve_WPDB {
         return $ud;
     }
     public function get_col($sql) { return []; }
+    public function get_var($sql) { foreach ($GLOBALS['BILLEDER'] as $url => $id) { if (strpos($sql, basename($url)) !== false) { return $id; } } return null; }
+    public function esc_like($s) { return addcslashes((string) $s, '_%\\'); }
 }
 $GLOBALS['wpdb'] = new Proeve_WPDB();
 function update_postmeta_cache($ids) { return true; }

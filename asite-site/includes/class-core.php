@@ -40,9 +40,13 @@ class Asite_Site {
             'forfatter_navn'    => '',        // navngiven forfatter på wiki-artikler (tom = altid virksomheden)
             'forfatter_titel'   => '',
             'forfatter_url'     => '',        // forfatterens egen side (Person.url i schemaet)
-            'forfatter_forael'  => 'wiki',
-            'artikler'          => '',
-            'og_billede'        => true,      // delingsbillede: featured image eller sidens første billede, når Rank Math intet har        // forældre-slugs, hvis sider er artikler; ellers fjernes Rank Maths Article (tom = rør intet)    // sider under denne forælder-slug er artikler med forfatter
+            'forfatter_forael'  => 'wiki',      // sider under denne forælder-slug er artikler med forfatter
+            'artikler'          => '',        // forældre-slugs eller /stier/, hvis sider er artikler; ellers fjernes Rank Maths Article (tom = rør intet)
+            'og_billede'        => true,      // delingsbillede: featured image eller sidens første billede, når Rank Math intet har
+            'standardbillede'   => '',        // billede til sider uden eget billede (filnavn eller id) – delingsbillede og schema
+            'site_altnavn'      => '',        // alternateName på WebSite (fx firmanavnet med ApS)
+            'forfattersider_fra' => true,
+            'locations_kml'     => true,      // /locations.kml + local-sitemap.xml ud fra virksomhedens adresse (som Rank Maths Local SEO)     // /author/… og ?author=N giver 404 (brugernavnene vises ikke)
             // Lancering (hm-lancering)
             'dev_vaert'         => '',        // udviklingsadressen: 301 til domænet, når sitet er lanceret
             'gamle_adresser'    => '',        // én pr. linje: »<gammel sti> = <ny sti>«
