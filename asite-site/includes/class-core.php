@@ -44,6 +44,7 @@ class Asite_Site {
             'artikler'          => '',        // forældre-slugs eller /stier/, hvis sider er artikler; ellers fjernes Rank Maths Article (tom = rør intet)
             'og_billede'        => true,      // delingsbillede: featured image eller sidens første billede, når Rank Math intet har
             'standardbillede'   => '',        // billede til sider uden eget billede (filnavn eller id) – delingsbillede og schema
+            'site_ikon'         => '',        // favicon/webstedsikon (filnavn eller id) – vinder over wp-admins valg
             'site_altnavn'      => '',        // alternateName på WebSite (fx firmanavnet med ApS)
             'forfattersider_fra' => true,     // /author/… og ?author=N giver 404 (brugernavnene vises ikke)
             'forfattersider_til' => '',       // … eller 301 dertil (fx /om-os/ som live terrasse.nu); vinder over 404

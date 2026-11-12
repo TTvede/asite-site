@@ -234,6 +234,12 @@ saet(['standardbillede' => '7']);
 p('standardbillede: et id virker også', Asite_Site_Seo::standardbillede() === 7);
 saet();
 p('standardbillede: tomt = intet', Asite_Site_Seo::standardbillede() === 0);
+saet(['site_ikon' => 'foto.avif']);
+p('site_ikon: filnavn → id, og det vinder over wp-admins site_icon', Asite_Site_Seo::site_ikon() === 7 && Asite_Site_Seo::site_ikon_option('99') === 7);
+saet(['site_ikon' => 'findes-ikke.png']);
+p('site_ikon: ukendt fil → WordPress\' eget site_icon bevares', Asite_Site_Seo::site_ikon_option('99') === '99');
+saet();
+p('site_ikon: tomt = intet filter', Asite_Site_Seo::site_ikon() === 0);
 
 /* Live's Rank Math (med Local SEO og standardbillede) havde felter, ny manglede (QA 11-11-2026). */
 $graf = ['org' => ['@type' => 'Organization', '@id' => 'https://test.invalid/#organization', 'logo' => ['@type' => 'ImageObject', '@id' => 'https://test.invalid/#logo']],

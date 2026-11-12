@@ -36,6 +36,11 @@ class Asite_Site_Seo {
             add_action('parse_request', [__CLASS__, 'kml_fil'], 0);
             add_filter('rank_math/sitemap/index', [__CLASS__, 'kml_index']);
         }
+        // Favicon (webstedsikon) fra Git: terrasse.nu mistede det ved flytningen (site_icon peger på et id i den gamle
+        // database). Et filnavn overlever flytninger, et id gør ikke. 12-11-2026.
+        if (trim((string) Asite_Site::i('site_ikon', '')) !== '') {
+            add_filter('pre_option_site_icon', [__CLASS__, 'site_ikon_option']);
+        }
         // /llms.txt (llmstxt.org): sitets indekserbare sider som ren tekst, grupperet, med titel, adresse og meta-beskrivelse.
         // Live terrasse.nu havde den (terrassenu-llms-txt.php) for AI-synligheden; den manglede efter flytningen. 12-11-2026.
         if (Asite_Site::i('llms', true)) {
@@ -218,10 +223,10 @@ class Asite_Site_Seo {
         nocache_headers();
     }
 
-    /** Standardbilledet (indstillingen er et id eller et filnavn fra mediebiblioteket) → id, eller 0. */
-    public static function standardbillede(): int {
-        return (int) Asite_Site::husk('standardbillede', function () {
-            $v = trim((string) Asite_Site::i('standardbillede', ''));
+    /** En indstilling, der er et id eller et filnavn fra mediebiblioteket → id, eller 0. */
+    private static function medie_id(string $navn): int {
+        return (int) Asite_Site::husk('medie:' . $navn, function () use ($navn) {
+            $v = trim((string) Asite_Site::i($navn, ''));
             if ($v === '') { return 0; }
             if (ctype_digit($v)) { return (int) $v; }
             global $wpdb;
@@ -230,6 +235,22 @@ class Asite_Site_Seo {
                 "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND (meta_value = %s OR meta_value LIKE %s) ORDER BY post_id LIMIT 1",
                 $fil, '%/' . $wpdb->esc_like($fil)));
         });
+    }
+
+    /** Standardbilledet (indstillingen er et id eller et filnavn fra mediebiblioteket) → id, eller 0. */
+    public static function standardbillede(): int {
+        return self::medie_id('standardbillede');
+    }
+
+    /** Favicon/webstedsikon fra indstillingen (id eller filnavn) → id, eller 0 (så gælder WordPress' eget). */
+    public static function site_ikon(): int {
+        return self::medie_id('site_ikon');
+    }
+
+    /** pre_option_site_icon: Gits favicon vinder over wp-admins; findes filen ikke, falder vi tilbage (false). */
+    public static function site_ikon_option($v) {
+        $id = self::site_ikon();
+        return $id > 0 ? $id : $v;
     }
 
     /** Sidens billede: featured image, sidens første billede – ellers standardbilledet. */

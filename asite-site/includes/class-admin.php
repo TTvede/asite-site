@@ -64,6 +64,7 @@ class Asite_Site_Admin {
             'artikler'          => $tekst('artikler'),
             'og_billede'        => !empty($p['og_billede']),
             'standardbillede'   => $linje('standardbillede'),
+            'site_ikon'         => $linje('site_ikon'),
             'site_altnavn'      => $linje('site_altnavn'),
             'forfattersider_fra' => !empty($p['forfattersider_fra']),
             'forfattersider_til' => trim($linje('forfattersider_til')),
@@ -253,6 +254,9 @@ class Asite_Site_Admin {
                     <tr><th scope="row">Standardbillede</th><td>
                         <?php self::felt('standardbillede', $s['standardbillede'], 30, 'filnavn.avif eller id'); ?>
                         <p class="description">Billede fra mediebiblioteket til sider uden eget billede: delingsbillede (og:image) og sidens billede i schemaet.</p></td></tr>
+                    <tr><th scope="row">Favicon</th><td>
+                        <?php self::felt('site_ikon', $s['site_ikon'], 30, 'logo_512x512.png eller id'); ?>
+                        <p class="description">Webstedsikonet (mindst 512×512) fra mediebiblioteket. Står der noget her, vinder det over »Webstedsikon« i Tilpas – tomt = WordPress' eget valg.</p></td></tr>
                     <tr><th scope="row">Forfattersider</th><td>
                         <?php self::tjek('forfattersider_fra', $s['forfattersider_fra'], 'Slå forfattersider fra (404)',
                             'WordPress viser ellers /author/&lt;brugernavn&gt;/ – og dermed brugernavnene til login.'); ?>
