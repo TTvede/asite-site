@@ -68,6 +68,10 @@ class Asite_Site_Admin {
             'forfattersider_fra' => !empty($p['forfattersider_fra']),
             'forfattersider_til' => trim($linje('forfattersider_til')),
             'locations_kml'     => !empty($p['locations_kml']),
+            'llms'              => !empty($p['llms']),
+            'llms_top'          => $tekst('llms_top'),
+            'llms_grupper'      => $tekst('llms_grupper'),
+            'llms_noter'        => $tekst('llms_noter'),
             'dev_vaert'         => strtolower(preg_replace('#^https?://#', '', trim($linje('dev_vaert'), '/ '))),
             'gamle_adresser'    => $tekst('gamle_adresser'),
             'robots'            => !empty($p['robots']),
@@ -257,6 +261,17 @@ class Asite_Site_Admin {
                     <tr><th scope="row">Lokal søgning</th><td>
                         <?php self::tjek('locations_kml', $s['locations_kml'], 'locations.kml og local-sitemap.xml ud fra virksomhedens adresse',
                             'Som Rank Maths Local SEO-modul (kræver en adresse under »Virksomheden i schema«; står modulet til, laver det dem selv).'); ?></td></tr>
+                    <tr><th scope="row">llms.txt</th><td>
+                        <?php self::tjek('llms', $s['llms'], 'Lav /llms.txt ud fra de indekserbare sider',
+                            'Titel, adresse og meta-beskrivelse for hver side, grupperet – det format, AI-søgning læser (llmstxt.org). Bygges ved hvert kald, så den følger siderne.'); ?>
+                        <p>Toppen (navn, resumé, kontakt):</p>
+                        <?php self::omraade('llms_top', $s['llms_top'], 5, "# Firmanavn — hvad vi laver\n\n> Kort resumé.\n\nKontakt: …"); ?>
+                        <p>Grupper i rækkefølge – resten kommer under »Øvrige sider«:</p>
+                        <?php self::omraade('llms_grupper', $s['llms_grupper'], 7, "Om virksomheden = /\nYdelser = /pris/, /pergola/\nProjekter = /cases/*"); ?>
+                        <p class="description">»*« til sidst tager alt under stien (ikke stien selv). Første gruppe, der passer, vinder.</p>
+                        <p>Noter til sidst:</p>
+                        <?php self::omraade('llms_noter', $s['llms_noter'], 5, "## Noter til brug af indholdet\n\n- …"); ?>
+                        <p class="description"><a href="<?php echo esc_url(home_url('/llms.txt')); ?>" target="_blank" rel="noopener">Se llms.txt</a></p></td></tr>
                 </table>
 
                 <h2 class="title">Omdirigeringer og robots.txt</h2>

@@ -48,6 +48,10 @@ class Asite_Site {
             'forfattersider_fra' => true,     // /author/… og ?author=N giver 404 (brugernavnene vises ikke)
             'forfattersider_til' => '',       // … eller 301 dertil (fx /om-os/ som live terrasse.nu); vinder over 404
             'locations_kml'     => true,      // /locations.kml + local-sitemap.xml ud fra virksomhedens adresse (som Rank Maths Local SEO)
+            'llms'              => true,      // /llms.txt: de indekserbare sider som ren tekst til AI-søgning (llmstxt.org)
+            'llms_top'          => '',        // toppen: »# Navn«, »> resumé«, kontakt (tom = sitets navn og slogan)
+            'llms_grupper'      => '',        // én pr. linje: »<overskrift> = <sti>, <sti>*« – resten under »Øvrige sider«
+            'llms_noter'        => '',        // fri tekst til sidst (fx »## Noter …« med punkter)
             // Lancering (hm-lancering)
             'dev_vaert'         => '',        // udviklingsadressen: 301 til domænet, når sitet er lanceret
             'gamle_adresser'    => '',        // én pr. linje: »<gammel sti> = <ny sti>«

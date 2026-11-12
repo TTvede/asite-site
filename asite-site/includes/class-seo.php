@@ -36,6 +36,11 @@ class Asite_Site_Seo {
             add_action('parse_request', [__CLASS__, 'kml_fil'], 0);
             add_filter('rank_math/sitemap/index', [__CLASS__, 'kml_index']);
         }
+        // /llms.txt (llmstxt.org): sitets indekserbare sider som ren tekst, grupperet, med titel, adresse og meta-beskrivelse.
+        // Live terrasse.nu havde den (terrassenu-llms-txt.php) for AI-synligheden; den manglede efter flytningen. 12-11-2026.
+        if (Asite_Site::i('llms', true)) {
+            add_action('parse_request', [__CLASS__, 'llms_fil'], 0);
+        }
         // Forfattersider: WordPress sender ?author=1 videre til /author/<brugernavn>/. Enten 301 til en fast side i ét hop
         // (live terrasse.nu: /om-os/, terrassenu-hardening.php) eller 404. 11-11-2026.
         if (trim((string) Asite_Site::i('forfattersider_til', '')) !== '') {
@@ -97,6 +102,95 @@ class Asite_Site_Seo {
         status_header(200);
         header('Content-Type: text/xml; charset=UTF-8');
         echo $svar;
+        exit;
+    }
+
+    /**
+     * Grupperne til /llms.txt: én pr. linje, »<overskrift> = <sti>, <sti>*, …« i den rækkefølge, de skal stå.
+     * »*« til sidst matcher ét eller flere tegn (»/cases/*« tager børnene, ikke /cases/ selv). Første gruppe, der
+     * matcher, vinder. Sider uden gruppe kommer under »Øvrige sider« (eller »Sider«, hvis der ingen grupper er).
+     */
+    public static function llms_grupper(string $tekst): array {
+        $ud = [];
+        foreach (preg_split('/\R/', $tekst) ?: [] as $linje) {
+            $linje = trim($linje);
+            if ($linje === '' || $linje[0] === '#' || !str_contains($linje, '=')) { continue; }
+            [$navn, $stier] = array_map('trim', explode('=', $linje, 2));
+            if ($navn !== '' && $stier !== '') { $ud[$navn] = Asite_Site::liste($stier); }
+        }
+        return $ud;
+    }
+
+    public static function llms_match(string $sti, array $moenstre): bool {
+        foreach ($moenstre as $m) {
+            if (str_ends_with($m, '*') ? (strlen($sti) > strlen($m) - 1 && str_starts_with($sti, substr($m, 0, -1))) : $sti === $m) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Selve teksten ud fra siderne (hver: sti, url, titel, beskrivelse – i den rækkefølge, de skal stå).
+     * Toppen (»# Navn«, »> resumé«, kontakt) og noterne til sidst er sitets egen tekst fra indstillingerne.
+     */
+    public static function llms_tekst(array $sider, string $dato): string {
+        $grupper = self::llms_grupper((string) Asite_Site::i('llms_grupper', ''));
+        $rest = $grupper ? 'Øvrige sider' : 'Sider';
+        $rows = array_fill_keys(array_merge(array_keys($grupper), [$rest]), []);
+        foreach ($sider as $s) {
+            $g = $rest;
+            foreach ($grupper as $navn => $moenstre) {
+                if (self::llms_match($s['sti'], $moenstre)) { $g = $navn; break; }
+            }
+            $rows[$g][] = '- [' . $s['titel'] . '](' . $s['url'] . ')' . ($s['beskrivelse'] !== '' ? ': ' . $s['beskrivelse'] : '');
+        }
+        $top = trim((string) Asite_Site::i('llms_top', ''));
+        if ($top === '') {
+            $top = '# ' . get_bloginfo('name');
+            $tag = trim((string) get_bloginfo('description'));
+            if ($tag !== '') { $top .= "\n\n> " . $tag; }
+        }
+        $ud = [$top, ''];
+        foreach ($rows as $navn => $linjer) {
+            if (!$linjer) { continue; }
+            $ud = array_merge($ud, ['## ' . $navn, ''], $linjer, ['']);
+        }
+        $noter = trim((string) Asite_Site::i('llms_noter', ''));
+        if ($noter !== '') { $ud = array_merge($ud, [$noter, '']); }
+        $ud[] = 'Opdateret: ' . $dato;
+        $ud[] = '';
+        return implode("\n", $ud);
+    }
+
+    /** Sitets publicerede, indekserbare sider (samme regel som sitemappet: Rank Maths noindex holdes ude). */
+    private static function llms_sider(): array {
+        $ud = [];
+        $forside = (int) get_option('page_on_front');
+        $sider = get_posts(['post_type' => 'page', 'post_status' => 'publish', 'posts_per_page' => -1,
+                            'orderby' => 'menu_order title', 'order' => 'ASC', 'no_found_rows' => true]);
+        foreach ($sider as $p) {
+            if (in_array('noindex', (array) get_post_meta($p->ID, 'rank_math_robots', true), true) || post_password_required($p)) { continue; }
+            $url = get_permalink($p->ID);
+            // Titlen uden brandhalen (»… | TerrasseNu«) – det er sidens emne, der skal stå.
+            $titel = (string) (get_post_meta($p->ID, 'rank_math_title', true) ?: $p->post_title);
+            $titel = trim(preg_split('/\s+[|·]\s+/u', wp_strip_all_tags($titel))[0]);
+            $s = ['sti' => (string) wp_parse_url($url, PHP_URL_PATH), 'url' => $url, 'titel' => $titel,
+                  'beskrivelse' => trim(wp_strip_all_tags((string) get_post_meta($p->ID, 'rank_math_description', true)))];
+            if ($p->ID === $forside) { $s['sti'] = '/'; }
+            $ud[] = $s;
+        }
+        return $ud;
+    }
+
+    public static function llms_fil() {
+        $sti = (string) wp_parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        if (rtrim(strtolower($sti), '/') !== '/llms.txt') { return; }
+        nocache_headers();
+        status_header(200);
+        header('Content-Type: text/plain; charset=utf-8');
+        header('X-Robots-Tag: all');
+        echo self::llms_tekst(self::llms_sider(), date_i18n('j. F Y'));
         exit;
     }
 

@@ -271,6 +271,24 @@ p('kml: andre adresser røres ikke', Asite_Site_Seo::kml_svar('/kontakt/') === n
 saet();
 p('kml: indekset røres ikke uden adresse', Asite_Site_Seo::kml_index('x') === 'x');
 
+/* llms.txt: live terrasse.nu havde den (terrassenu-llms-txt.php); den manglede efter flytningen. */
+$ls = [['sti' => '/', 'url' => 'https://test.invalid/', 'titel' => 'Forsiden', 'beskrivelse' => 'Om os.'],
+       ['sti' => '/cases/', 'url' => 'https://test.invalid/cases/', 'titel' => 'Cases', 'beskrivelse' => ''],
+       ['sti' => '/cases/a/', 'url' => 'https://test.invalid/cases/a/', 'titel' => 'Case A', 'beskrivelse' => 'En case.'],
+       ['sti' => '/pris/', 'url' => 'https://test.invalid/pris/', 'titel' => 'Pris', 'beskrivelse' => 'Priser.']];
+p('llms: grupper læses i rækkefølge, overskrift med mellemrum', Asite_Site_Seo::llms_grupper("Om os = /\n# x\nUdførte projekter = /cases/*, /x/")
+    === ['Om os' => ['/'], 'Udførte projekter' => ['/cases/*', '/x/']]);
+p('llms: »*« tager børnene, ikke stien selv', Asite_Site_Seo::llms_match('/cases/a/', ['/cases/*']) && !Asite_Site_Seo::llms_match('/cases/', ['/cases/*']));
+saet(['llms_top' => "# TestNu — vi bygger\n\n> Resumé.", 'llms_grupper' => "Om virksomheden = /\nUdførte projekter = /cases/*",
+      'llms_noter' => "## Noter\n\n- En note."]);
+$lt = Asite_Site_Seo::llms_tekst($ls, '12. november 2026');
+p('llms: top, grupper, øvrige og noter i rækkefølge', $lt === "# TestNu — vi bygger\n\n> Resumé.\n\n## Om virksomheden\n\n- [Forsiden](https://test.invalid/): Om os.\n\n"
+    . "## Udførte projekter\n\n- [Case A](https://test.invalid/cases/a/): En case.\n\n## Øvrige sider\n\n- [Cases](https://test.invalid/cases/)\n- [Pris](https://test.invalid/pris/): Priser.\n\n"
+    . "## Noter\n\n- En note.\n\nOpdateret: 12. november 2026\n");
+saet();
+$lt = Asite_Site_Seo::llms_tekst($ls, 'i dag');
+p('llms: uden indstillinger – sitets navn og alle sider under »Sider«', str_starts_with($lt, "# TestNu\n\n## Sider\n\n- [Forsiden]") && substr_count($lt, "\n- [") === 4);
+
 /* Forfattersider: live gav 404, ny sendte ?author=1 videre til /author/<brugernavn>/. */
 $GLOBALS['FORFATTERSIDE'] = true;
 Asite_Site_Seo::forfattersider();
