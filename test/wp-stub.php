@@ -47,6 +47,11 @@ function is_admin() { return false; }
 function wp_doing_ajax() { return false; }
 function is_preview() { return false; }
 function is_singular($t = '') { return $GLOBALS['SINGULAR'] ?? true; }
+function is_front_page() { return $GLOBALS['FORSIDE'] ?? false; }
+function is_404() { return $GLOBALS['ER404'] ?? false; }
+function is_search() { return isset($GLOBALS['SOEG']); }
+function get_search_query() { return (string) ($GLOBALS['SOEG'] ?? ''); }
+function get_the_archive_title() { return 'Arkiv'; }
 function get_queried_object_id() { return $GLOBALS['SIDE_ID'] ?? 1; }
 function current_user_can($c) { return !empty($GLOBALS['ADMIN']); }
 function user_can($u, $c) { return !empty($GLOBALS['ADMIN']); }

@@ -12,7 +12,7 @@ $dir = rtrim($argv[1], '/') . '/';
 define('ASITE_SITE_VERSION', 'proeve');
 define('ASITE_SITE_DIR', $dir);
 define('ASITE_SITE_FILE', $dir . 'asite-site.php');
-foreach (['core', 'html', 'seo', 'meta', 'graf', 'sitemap', 'seo-ui', 'lancering', 'roller', 'sporing', 'admin', 'updater'] as $k) {
+foreach (['core', 'html', 'seo', 'meta', 'graf', 'sitemap', 'brodkrummer', 'seo-ui', 'lancering', 'roller', 'sporing', 'admin', 'updater'] as $k) {
     require $dir . "includes/class-$k.php";
 }
 
@@ -571,6 +571,30 @@ $graf = Asite_Site_Graf::graf(81);
 $org = array_values(array_filter($graf['@graph'], fn($n) => ($n['@id'] ?? '') === home_url('/#organization')))[0] ?? [];
 p('tal skrives som tekst (geo), som hos Rank Math', ($org['geo']['latitude'] ?? null) === '55.79');
 unset($GLOBALS['OPT']['rank-math-options-titles'], $GLOBALS['OPT']['rank-math-options-general']);
+$GLOBALS['META'] = [];
+saet();
+
+echo "8g. Brødkrummer (Rank Maths markup, når Rank Math er slået fra)\n";
+saet();
+$GLOBALS['OPT']['rank-math-options-general'] = ['breadcrumbs' => 'on', 'breadcrumbs_home' => 'on', 'breadcrumbs_home_label' => 'Hjem',
+    'breadcrumbs_separator' => '&raquo;', 'breadcrumbs_404_label' => 'Fejl 404: Siden blev ikke fundet', 'breadcrumbs_search_format' => 'Du søgte efter'];
+$GLOBALS['POSTS'][80] = ['titel' => 'Terrasse-cases']; $GLOBALS['POSTS'][81] = ['titel' => 'Thermowood & co i Holte'];
+$GLOBALS['FORAELDER'][81] = 80; $GLOBALS['SIDE_ID'] = 81;
+$GLOBALS['META'] = [];
+$h = Asite_Site_Brodkrummer::html();
+p('underside: Hjem » forælder » siden, som Rank Math', $h === '<nav aria-label="breadcrumbs" class="rank-math-breadcrumb"><p><a href="' . home_url() . '">Hjem</a><span class="separator"> &raquo; </span><a href="' . get_permalink(80) . '">Terrasse-cases</a><span class="separator"> &raquo; </span><span class="last">Thermowood &amp; co i Holte</span></p></nav>', $h);
+$GLOBALS['META']['81:rank_math_breadcrumb_title'] = 'Holte';
+p('Rank Maths krumme-titel bruges', str_contains(Asite_Site_Brodkrummer::html(), '<span class="last">Holte</span>'));
+$GLOBALS['FORSIDE'] = true;
+p('forsiden: kun »Hjem« uden link', Asite_Site_Brodkrummer::html() === '<nav aria-label="breadcrumbs" class="rank-math-breadcrumb"><p><span class="last">Hjem</span></p></nav>');
+$GLOBALS['FORSIDE'] = false; $GLOBALS['ER404'] = true;
+p('404: Hjem » 404-etiketten', str_ends_with(Asite_Site_Brodkrummer::html(), '<span class="separator"> &raquo; </span><span class="last">Fejl 404: Siden blev ikke fundet</span></p></nav>'));
+$GLOBALS['ER404'] = false; $GLOBALS['SOEG'] = 'ipe';
+p('søgning: Hjem » søgeetiketten', str_contains(Asite_Site_Brodkrummer::html(), '<span class="last">Du søgte efter</span>'));
+unset($GLOBALS['SOEG']);
+$GLOBALS['OPT']['rank-math-options-general']['breadcrumbs'] = 'off';
+p('slået fra i indstillingerne: intet', Asite_Site_Brodkrummer::html() === '');
+unset($GLOBALS['OPT']['rank-math-options-general'], $GLOBALS['FORAELDER'][81], $GLOBALS['SIDE_ID'], $GLOBALS['ER404'], $GLOBALS['FORSIDE']);
 $GLOBALS['META'] = [];
 saet();
 

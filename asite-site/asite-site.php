@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Asite Site
  * Description: Det Breakdance ikke kan selv – på et site, kunden kan overtage: billedattributter og ærlig sizes, SEO-tags (title, description, canonical, Open Graph) med boks og oversigt, FAQ-schema og forfatter, omdirigeringer og robots.txt, hero uden lazy load, inline-SVG, redaktørlås og sporing. Alt styres fra Værktøjer → Asite Site. Opdateres fra GitHub.
- * Version: 0.1.17
+ * Version: 0.1.18
  * Author: Asite
  * Requires at least: 6.4
  * Requires PHP: 7.4
@@ -19,7 +19,7 @@
  */
 if (!defined('ABSPATH')) { exit; }
 
-define('ASITE_SITE_VERSION', '0.1.17');
+define('ASITE_SITE_VERSION', '0.1.18');
 define('ASITE_SITE_DIR', plugin_dir_path(__FILE__));
 define('ASITE_SITE_FILE', __FILE__);
 
@@ -29,6 +29,7 @@ require_once ASITE_SITE_DIR . 'includes/class-seo.php';
 require_once ASITE_SITE_DIR . 'includes/class-meta.php';
 require_once ASITE_SITE_DIR . 'includes/class-graf.php';
 require_once ASITE_SITE_DIR . 'includes/class-sitemap.php';
+require_once ASITE_SITE_DIR . 'includes/class-brodkrummer.php';
 require_once ASITE_SITE_DIR . 'includes/class-seo-ui.php';
 require_once ASITE_SITE_DIR . 'includes/class-lancering.php';
 require_once ASITE_SITE_DIR . 'includes/class-roller.php';
@@ -52,6 +53,8 @@ add_action('plugins_loaded', function () {
     Asite_Site_Seo::init();
     Asite_Site_Meta::init();
     Asite_Site_Sitemap::init();
+    // Brødkrummerne (Breakdances element kalder rank_math_the_breadcrumbs()): Asite Site leverer funktionen, når Rank Math er slået fra.
+    if (Asite_Site_Meta::aktiv()) { require_once ASITE_SITE_DIR . 'includes/rank-math-kompat.php'; }
     Asite_Site_Lancering::init();
     Asite_Site_Roller::init();
     Asite_Site_Sporing::init();
