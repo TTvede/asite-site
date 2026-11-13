@@ -14,6 +14,7 @@ Alt styres fra **Værktøjer → Asite Site**. Intet kræver kode i sitets filer
 |---|---|
 | Billeder | `srcset`, `width`/`height` og `alt` fra mediebiblioteket på alle billeder (Breakdance skriver dem uden mål, og udelader `alt` helt, når mediebibliotekets alt-tekst er tom). Loft for `sizes` + en tabel pr. komponentklasse, så browseren ikke henter varianter, der er langt bredere end pladsen. AVIF-understørrelser i q50. |
 | Sidens finish | Hero uden lazy load (`<præfiks>-lcp` får også `fetchpriority="high"`), SVG-ikoner lagt inline (kan farves med CSS), scenelag får billedets filnavn som klasse, tomme valgfrie felter tømmes helt, så CSS `:empty` rammer, og WordPress' `global-styles` fjernes fra footeren. |
+| SEO-tags | Title, description, robots, canonical, Open Graph og Twitter – præcis som Rank Math (bevist med `hm seo_facit skygge`: 0 forskelle). Boks på hver side med snippet preview, og **Værktøjer → SEO-oversigt** med alle sider og fund (dubletter, længder). Slås til med »SEO-tags: Asite Site«, når Rank Math er fra; indtil da skriver boksen også i Rank Maths felter. |
 | Schema | FAQPage fra sidens eget Breakdance-træ (samme data, som siden viser – også efter kundens rettelser). Alternativt firmanavn og en navngiven forfatter på artikler i Rank Maths schema. |
 | Omdirigeringer | 301 fra udviklingsadressen til domænet, når sitet er lanceret (før lanceringen er den byggepladsen og røres ikke). Gamle adresser → nye sider. |
 | robots.txt | AI-søgning og -svar ja, ren træning nej. Kan vendes. |

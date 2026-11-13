@@ -55,6 +55,8 @@ class Asite_Site_Admin {
             'global_styles_fra' => !empty($p['global_styles_fra']),
             'google_fonts_fra'  => !empty($p['google_fonts_fra']),
             'skrifter_forhaand' => $tekst('skrifter_forhaand'),
+            'seo'               => ($p['seo'] ?? '') === 'asite' ? 'asite' : 'rankmath',
+            'site_navn'         => $linje('site_navn'),
             'faq_schema'        => !empty($p['faq_schema']),
             'altnavn'           => $linje('altnavn'),
             'forfatter_navn'    => $linje('forfatter_navn'),
@@ -231,6 +233,18 @@ class Asite_Site_Admin {
 
                 <h2 class="title">Søgemaskiner og schema</h2>
                 <table class="form-table" role="presentation">
+                    <tr><th scope="row">SEO-tags</th><td>
+                        <?php $rm = Asite_Site_Meta::rank_math(); ?>
+                        <label><input type="radio" name="seo" value="rankmath" <?php checked($s['seo'], 'rankmath'); ?>> Rank Math skriver title, description, canonical og Open Graph</label><br>
+                        <label><input type="radio" name="seo" value="asite" <?php checked($s['seo'], 'asite'); ?>> Asite Site skriver dem</label>
+                        <p class="description">Asite Site laver præcis de samme tags ud fra de samme felter (bevist med <code>hm seo_facit skygge</code>: 0 forskelle).
+                        »Asite Site« virker først, når Rank Math er slået fra – ellers fik siderne to sæt.
+                        <?php if ($s['seo'] === 'asite' && $rm): ?><br><strong style="color:#b32d2e">Rank Math er stadig til, så Rank Math skriver tags.</strong><?php endif; ?>
+                        <br><strong>Schema og sitemap kommer stadig fra Rank Math</strong> (trin 2b og 3) – slå ikke Rank Math fra endnu.
+                        Title og description rettes på hver side eller i <a href="<?php echo esc_url(admin_url('tools.php?page=asite-site-seo')); ?>">SEO-oversigten</a>.</p></td></tr>
+                    <tr><th scope="row">Sitets navn</th><td>
+                        <?php self::felt('site_navn', $s['site_navn'], 30, Asite_Site_Meta::site_navn()); ?>
+                        <p class="description">Navnet ved delinger (<code>og:site_name</code>). Tom = <?php echo esc_html(Asite_Site_Meta::site_navn()); ?>.</p></td></tr>
                     <tr><th scope="row">FAQ-schema</th><td>
                         <?php self::tjek('og_billede', $s['og_billede'], 'Delingsbillede (og:image) fra sidens første billede, når Rank Math intet har',
                             'Sider bygget i Breakdance har sjældent et »featured image«, så Facebook, LinkedIn og beskeder viste ingen forhåndsvisning.'); ?><br>

@@ -34,6 +34,10 @@ class Asite_Site {
             'global_styles_fra'  => true,     // WordPress' global-styles i footeren (følger Breakdances Bloat Eliminator)
             'google_fonts_fra'  => false,    // Breakdance henter ikke skrifter fra Google (sitet har dem selv – GDPR)
             'skrifter_forhaand' => '',        // skriftfiler, der hentes med det samme (preload) – én pr. linje
+            // SEO-tags (trin 2): 'rankmath' = Rank Math skriver title/description/canonical/OG (Asite Site intet);
+            // 'asite' = Asite Site skriver dem – kun når Rank Math er slået fra (ellers to sæt). Se class-meta.php.
+            'seo'               => 'rankmath',
+            'site_navn'         => '',        // og:site_name (tom = Rank Maths »website_name«, ellers WordPress' navn)
             // SEO/schema (hm-schema)
             'faq_schema'        => true,      // FAQPage fra Breakdance-træet
             'altnavn'           => '',        // alternateName på virksomheden (gammelt firmanavn/domæne)

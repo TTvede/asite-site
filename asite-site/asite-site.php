@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Asite Site
- * Description: Det Breakdance ikke kan selv – på et site, kunden kan overtage: billedattributter og ærlig sizes, FAQ-schema og forfatter, omdirigeringer og robots.txt, hero uden lazy load, inline-SVG, redaktørlås og sporing. Alt styres fra Værktøjer → Asite Site. Opdateres fra GitHub.
- * Version: 0.1.14
+ * Description: Det Breakdance ikke kan selv – på et site, kunden kan overtage: billedattributter og ærlig sizes, SEO-tags (title, description, canonical, Open Graph) med boks og oversigt, FAQ-schema og forfatter, omdirigeringer og robots.txt, hero uden lazy load, inline-SVG, redaktørlås og sporing. Alt styres fra Værktøjer → Asite Site. Opdateres fra GitHub.
+ * Version: 0.1.15
  * Author: Asite
  * Requires at least: 6.4
  * Requires PHP: 7.4
@@ -19,13 +19,15 @@
  */
 if (!defined('ABSPATH')) { exit; }
 
-define('ASITE_SITE_VERSION', '0.1.14');
+define('ASITE_SITE_VERSION', '0.1.15');
 define('ASITE_SITE_DIR', plugin_dir_path(__FILE__));
 define('ASITE_SITE_FILE', __FILE__);
 
 require_once ASITE_SITE_DIR . 'includes/class-core.php';
 require_once ASITE_SITE_DIR . 'includes/class-html.php';
 require_once ASITE_SITE_DIR . 'includes/class-seo.php';
+require_once ASITE_SITE_DIR . 'includes/class-meta.php';
+require_once ASITE_SITE_DIR . 'includes/class-seo-ui.php';
 require_once ASITE_SITE_DIR . 'includes/class-lancering.php';
 require_once ASITE_SITE_DIR . 'includes/class-roller.php';
 require_once ASITE_SITE_DIR . 'includes/class-sporing.php';
@@ -37,6 +39,8 @@ add_action('plugins_loaded', function () {
     // ligger på sitet. Så kan pluginet installeres og udfyldes, FØR mu-plugins fjernes.
     Asite_Site_Admin::init();
     Asite_Site_Updater::init();
+    // SEO-boksen og -oversigten: også i overgangen (de skriver kun data – og altid også i Rank Maths felter).
+    Asite_Site_Seo_Ui::init();
 
     // Dobbeltkørsel ville give to output-buffere, to FAQ-schemaer og to robots-blokke. Husmodellens mu-plugins
     // sætter HM_PREFIKS; så længe den findes, holder pluginet sig helt væk fra sitet (admin-noten siger det).
@@ -44,6 +48,7 @@ add_action('plugins_loaded', function () {
 
     Asite_Site_Html::init();
     Asite_Site_Seo::init();
+    Asite_Site_Meta::init();
     Asite_Site_Lancering::init();
     Asite_Site_Roller::init();
     Asite_Site_Sporing::init();

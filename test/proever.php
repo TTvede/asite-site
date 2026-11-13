@@ -12,7 +12,7 @@ $dir = rtrim($argv[1], '/') . '/';
 define('ASITE_SITE_VERSION', 'proeve');
 define('ASITE_SITE_DIR', $dir);
 define('ASITE_SITE_FILE', $dir . 'asite-site.php');
-foreach (['core', 'html', 'seo', 'lancering', 'roller', 'sporing', 'admin', 'updater'] as $k) {
+foreach (['core', 'html', 'seo', 'meta', 'seo-ui', 'lancering', 'roller', 'sporing', 'admin', 'updater'] as $k) {
     require $dir . "includes/class-$k.php";
 }
 
@@ -485,6 +485,66 @@ p('forfatteren har sin egen adresse med (som HM_FORFATTER["url"])', ($r['asite_f
     && ($r['asite_forfatter']['jobTitle'] ?? '') === 'Art director og indehaver');
 unset($GLOBALS['FORAELDER'][42]);
 saet();
+
+/* ---------- 8c. SEO-tags (trin 2: samme tags som Rank Math) ---------- */
+echo "8c. SEO-tags\n";
+saet();
+$GLOBALS['POSTS'][70] = ['titel' => 'Pris på terrasse', 'dato' => '2026-09-01 10:00:00', 'aendret' => '2026-11-11 12:00:00'];
+$GLOBALS['OPT']['rank-math-options-titles'] = ['title_separator' => '|', 'website_name' => 'TestNu', 'pt_page_title' => '%title% %sep% %sitename%'];
+p('title uden eget felt: Rank Maths skabelon', Asite_Site_Meta::titel(70) === 'Pris på terrasse | TestNu');
+$GLOBALS['META']['70:rank_math_title'] = 'Terrassepris 2026';
+p('title: Rank Maths felt', Asite_Site_Meta::titel(70) === 'Terrassepris 2026');
+$GLOBALS['META']['70:_asite_seo_titel'] = 'Hvad koster en terrasse?';
+p('title: eget felt vinder', Asite_Site_Meta::titel(70) === 'Hvad koster en terrasse?');
+p('robots standard: index, follow + avancerede felter', Asite_Site_Meta::tags(70)[1] === ['name', 'robots', 'index, follow, max-snippet:-1, max-video-preview:-1, max-image-preview:large']);
+$GLOBALS['META']['70:rank_math_robots'] = ['noindex'];
+$tags = Asite_Site_Meta::tags(70);
+p('noindex som Rank Math: »follow, noindex«', $tags[1] === ['name', 'robots', 'follow, noindex']);
+p('noindex: ingen canonical', !in_array('canonical', array_column($tags, 1), true));
+$GLOBALS['META']['70:rank_math_robots'] = ['noindex', 'nofollow'];
+p('noindex + nofollow: »nofollow, noindex«', Asite_Site_Meta::tags(70)[1] === ['name', 'robots', 'nofollow, noindex']);
+unset($GLOBALS['META']['70:rank_math_robots']);
+$navne = array_column(Asite_Site_Meta::tags(70), 1);
+p('rækkefølge som Rank Math', array_slice($navne, 0, 5) === ['', 'robots', 'canonical', 'og:locale', 'og:type']
+    && array_search('og:updated_time', $navne) < array_search('article:published_time', $navne)
+    && end($navne) === 'twitter:data1');
+p('og:type: article (ikke forsiden)', in_array(['property', 'og:type', 'article'], Asite_Site_Meta::tags(70), true));
+$GLOBALS['OPT']['show_on_front'] = 'page'; $GLOBALS['OPT']['page_on_front'] = 70;
+p('og:type: website på forsiden', in_array(['property', 'og:type', 'website'], Asite_Site_Meta::tags(70), true));
+unset($GLOBALS['OPT']['show_on_front'], $GLOBALS['OPT']['page_on_front']);
+$GLOBALS['POSTS'][71] = ['titel' => 'Ny', 'dato' => '2026-09-01 10:00:00', 'aendret' => '2026-09-01 10:00:00'];
+p('og:updated_time kun når siden er ændret efter udgivelse', !in_array('og:updated_time', array_column(Asite_Site_Meta::tags(71), 1), true));
+$GLOBALS['POST_FIELD']['70:post_content'] = str_repeat('ord ', 450);
+p('læsetid: 450 ord = 2 minutter (rundet ned, 200 pr. minut)', Asite_Site_Meta::laesetid(70) === '2 minutter');
+$GLOBALS['POST_FIELD']['70:post_content'] = 'kort';
+p('læsetid: under 200 ord', Asite_Site_Meta::laesetid(70) === 'Mindre end et minut');
+$GLOBALS['BILLED_META'][501] = ['file' => '2026/11/hero.avif', 'width' => 2400, 'height' => 1600];
+$GLOBALS['BILLED_META'][502] = ['file' => '2026/11/lille.avif', 'width' => 150, 'height' => 100];
+$GLOBALS['META']['70:_asite_seo_billede'] = 502;
+p('delingsbillede under 200 px: intet (Rank Maths grænse)', Asite_Site_Meta::billede(70) === []);
+$GLOBALS['META']['70:_asite_seo_billede'] = 501;
+p('delingsbillede over 2000 px og ingen mindre størrelse: intet', Asite_Site_Meta::billede(70) === []);
+unset($GLOBALS['META']['70:_asite_seo_billede']);
+$html = Asite_Site_Meta::html(70);
+p('html: title og meta escapet', str_contains($html, '<title>Hvad koster en terrasse?</title>') && str_contains($html, '<meta property="og:site_name" content="TestNu" />'));
+saet();
+p('standard: Asite Site skriver ingen tags (Rank Math gør)', !Asite_Site_Meta::aktiv());
+saet(['seo' => 'asite']);
+p('»asite« uden Rank Math: Asite Site skriver tags', Asite_Site_Meta::aktiv());
+saet();
+
+echo "8d. SEO-boks og -oversigt (data)\n";
+$GLOBALS['META'] = [];
+Asite_Site_Seo_Ui::gem_felter(70, ['titel' => 'Ny title', 'beskrivelse' => 'Ny beskrivelse', 'robots' => 'noindex']);
+p('gem: skriver både eget felt og Rank Maths', ($GLOBALS['META']['70:_asite_seo_titel'] ?? '') === 'Ny title'
+    && ($GLOBALS['META']['70:rank_math_title'] ?? '') === 'Ny title' && ($GLOBALS['META']['70:rank_math_robots'] ?? '') === ['noindex']);
+Asite_Site_Seo_Ui::rank_math_rettet(0, 70, 'rank_math_title');
+p('Rank Math (eller hm) retter title: Asite Sites kopi slettes, Rank Maths værdi gælder',
+    !isset($GLOBALS['META']['70:_asite_seo_titel']) && isset($GLOBALS['META']['70:_asite_seo_beskrivelse']));
+Asite_Site_Seo_Ui::gem_felter(70, ['robots' => '']);
+p('robots tilbage til index: Rank Math får »index«', ($GLOBALS['META']['70:rank_math_robots'] ?? '') === ['index'] && !isset($GLOBALS['META']['70:_asite_seo_robots']));
+p('værdier: eget felt → Rank Maths', Asite_Site_Seo_Ui::vaerdier(70)['titel'] === 'Ny title' && Asite_Site_Seo_Ui::vaerdier(70)['robots'] === '');
+$GLOBALS['META'] = [];
 
 /* ---------- 9. Overgangen ---------- */
 echo "9. Overgangen fra mu-plugins\n";

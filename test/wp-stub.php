@@ -166,3 +166,17 @@ function gennem_bufferne(string $html): string {
     while (ob_get_level() > $niveau) { ob_end_flush(); }
     return ob_get_clean();
 }
+
+// SEO-tags (class-meta.php, trin 2) – en side er $GLOBALS['POSTS'][id] = [titel, dato, ændret, indhold, status].
+function get_the_title($id = 0) { return $GLOBALS['POSTS'][$id]['titel'] ?? ''; }
+function get_locale() { return 'da_DK'; }
+function get_post($id = 0) { $p = $GLOBALS['POSTS'][$id] ?? []; return (object) ['ID' => $id, 'post_date' => $p['dato'] ?? '2026-09-01 10:00:00',
+    'post_modified' => $p['aendret'] ?? '2026-09-01 10:00:00', 'post_type' => 'page', 'post_content' => $p['indhold'] ?? '']; }
+function mysql2date($f, $d, $t = true) { return (new DateTime($d, new DateTimeZone('Europe/Copenhagen')))->format($f); }
+function post_password_required($p = null) { return false; }
+function get_post_status($id = 0) { return $GLOBALS['POSTS'][$id]['status'] ?? 'publish'; }
+function wp_attachment_is_image($id) { return isset($GLOBALS['BILLED_META'][$id]); }
+function get_post_mime_type($id) { return 'image/avif'; }
+function wp_date($f, $t = null) { return date($f); }
+function get_the_excerpt($id = 0) { return ''; }
+function delete_post_meta($id, $k, $v = '') { unset($GLOBALS['META']["$id:$k"]); return true; }
