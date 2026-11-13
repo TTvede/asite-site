@@ -160,7 +160,7 @@ class Asite_Site_Seo_Ui {
                 <input type="text" id="asite_seo_canonical" name="asite_seo[canonical]" value="<?php echo esc_attr($v['canonical']); ?>" placeholder="<?php echo esc_attr((string) get_permalink($id)); ?>">
                 <p class="description">Kun hvis siden er en kopi af en anden side. Tom = sidens egen adresse (det rigtige næsten altid).</p>
                 <label for="asite_seo_billede">Delingsbillede (id fra mediebiblioteket)</label>
-                <input type="text" id="asite_seo_billede" name="asite_seo[billede]" value="<?php echo $v['billede'] ? (int) $v['billede'] : ''; ?>" placeholder="<?php echo $auto_billede ? esc_attr('automatisk: ' . basename((string) wp_get_attached_file($auto_billede))) : 'intet billede'; ?>" style="max-width:260px">
+                <input type="text" id="asite_seo_billede" name="asite_seo[billede]" value="<?php echo $v['billede'] ? (int) $v['billede'] : ''; ?>" placeholder="<?php echo $auto_billede ? esc_attr('automatisk: ' . basename((string) get_attached_file($auto_billede))) : 'intet billede'; ?>" style="max-width:260px">
                 <p class="description">Billedet, Facebook, LinkedIn og beskeder viser. Tom = sidens første billede.</p>
             </details>
         </div>
