@@ -49,6 +49,7 @@ class Asite_Site_Meta {
             return;
         }
         echo self::html((int) get_queried_object_id());
+        echo Asite_Site_Graf::html((int) get_queried_object_id());   // schema-grafen (trin 2b) – samme sted som Rank Maths
     }
 
     // ---------- data ----------

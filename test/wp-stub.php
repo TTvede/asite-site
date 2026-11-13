@@ -180,3 +180,11 @@ function get_post_mime_type($id) { return 'image/avif'; }
 function wp_date($f, $t = null) { return date($f); }
 function get_the_excerpt($id = 0) { return ''; }
 function delete_post_meta($id, $k, $v = '') { unset($GLOBALS['META']["$id:$k"]); return true; }
+function get_post_ancestors($id) { $ud = []; while ($f = ($GLOBALS['FORAELDER'][$id] ?? 0)) { $ud[] = $f; $id = $f; } return $ud; }
+// Sitemap (class-sitemap.php): sider i $GLOBALS['POSTS'] med 'gmt' (post_modified_gmt); rækkefølge efter ændring, nyeste først.
+function get_post_types($a = [], $o = 'names') { return ['post' => 'post', 'page' => 'page', 'attachment' => 'attachment']; }
+function get_posts($a = []) {
+    $ider = array_keys(array_filter($GLOBALS['POSTS'] ?? [], fn($p) => ($p['type'] ?? 'page') === ($a['post_type'] ?? 'page') && ($p['status'] ?? 'publish') === 'publish' && isset($p['gmt'])));
+    usort($ider, fn($x, $y) => strcmp($GLOBALS['POSTS'][$y]['gmt'], $GLOBALS['POSTS'][$x]['gmt']));
+    return $ider;
+}

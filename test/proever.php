@@ -12,7 +12,7 @@ $dir = rtrim($argv[1], '/') . '/';
 define('ASITE_SITE_VERSION', 'proeve');
 define('ASITE_SITE_DIR', $dir);
 define('ASITE_SITE_FILE', $dir . 'asite-site.php');
-foreach (['core', 'html', 'seo', 'meta', 'seo-ui', 'lancering', 'roller', 'sporing', 'admin', 'updater'] as $k) {
+foreach (['core', 'html', 'seo', 'meta', 'graf', 'sitemap', 'seo-ui', 'lancering', 'roller', 'sporing', 'admin', 'updater'] as $k) {
     require $dir . "includes/class-$k.php";
 }
 
@@ -545,6 +545,59 @@ Asite_Site_Seo_Ui::gem_felter(70, ['robots' => '']);
 p('robots tilbage til index: Rank Math får »index«', ($GLOBALS['META']['70:rank_math_robots'] ?? '') === ['index'] && !isset($GLOBALS['META']['70:_asite_seo_robots']));
 p('værdier: eget felt → Rank Maths', Asite_Site_Seo_Ui::vaerdier(70)['titel'] === 'Ny title' && Asite_Site_Seo_Ui::vaerdier(70)['robots'] === '');
 $GLOBALS['META'] = [];
+
+echo "8e. Schema-grafen (trin 2b)\n";
+saet();
+$GLOBALS['META'] = [];
+$GLOBALS['OPT']['rank-math-options-titles'] = ['knowledgegraph_name' => 'Fauth teknik & service', 'website_name' => 'Fauth teknik & service',
+    'pt_page_default_rich_snippet' => 'article', 'pt_page_default_article_type' => 'Article', 'title_separator' => '|'];
+$GLOBALS['OPT']['rank-math-options-general'] = ['breadcrumbs' => 'on', 'breadcrumbs_home' => 'on', 'breadcrumbs_home_label' => 'Hjem'];
+$GLOBALS['POSTS'][80] = ['titel' => 'Cases']; $GLOBALS['POSTS'][81] = ['titel' => 'Terrasse i Allerød'];
+$GLOBALS['FORAELDER'][81] = 80;
+$GLOBALS['META']['81:rank_math_title'] = 'Træ & sten | Case';
+$g = Asite_Site_Graf::grundstamme(81);
+p('brødkrummer: Hjem → forælder → siden, position som tekst', array_map(fn($x) => [$x['position'], $x['item']['name']], $g['BreadcrumbList']['itemListElement'])
+    === [['1', 'Hjem'], ['2', 'Cases'], ['3', 'Terrasse i Allerød']]);
+p('navne HTML-escapet som hos Rank Math', $g['publisher']['name'] === 'Fauth teknik &amp; service' && $g['WebPage']['name'] === 'Træ &amp; sten | Case'
+    && $g['richSnippet']['headline'] === 'Træ &amp; sten | Case');
+p('ingen SearchAction uden for forsiden', !isset($g['WebSite']['potentialAction']) && isset($g['WebPage']['breadcrumb']));
+$GLOBALS['OPT']['show_on_front'] = 'page'; $GLOBALS['OPT']['page_on_front'] = 81;
+$g = Asite_Site_Graf::grundstamme(81);
+p('forsiden: SearchAction, about, ingen brødkrummer', isset($g['WebSite']['potentialAction']) && isset($g['WebPage']['about']) && !isset($g['BreadcrumbList']));
+unset($GLOBALS['OPT']['show_on_front'], $GLOBALS['OPT']['page_on_front'], $GLOBALS['FORAELDER'][81]);
+saet(['virksomhed' => array_merge(proeve_indstillinger()['virksomhed'] ?? [], ['geo' => '55.79, 12.50'])]);
+$GLOBALS['SIDE_ID'] = 81;
+$graf = Asite_Site_Graf::graf(81);
+$org = array_values(array_filter($graf['@graph'], fn($n) => ($n['@id'] ?? '') === home_url('/#organization')))[0] ?? [];
+p('tal skrives som tekst (geo), som hos Rank Math', ($org['geo']['latitude'] ?? null) === '55.79');
+unset($GLOBALS['OPT']['rank-math-options-titles'], $GLOBALS['OPT']['rank-math-options-general']);
+$GLOBALS['META'] = [];
+saet();
+
+echo "8f. Sitemap (trin 3)\n";
+saet();
+$GLOBALS['POSTS'] = [];
+for ($i = 1; $i <= 205; $i++) { $GLOBALS['POSTS'][1000 + $i] = ['titel' => "Side $i", 'gmt' => sprintf('2026-11-%02d 10:00:00', 1 + $i % 28)]; }
+$GLOBALS['POSTS'][1001]['gmt'] = '2026-01-01 00:00:00';
+$GLOBALS['OPT']['page_on_front'] = 1001; $GLOBALS['OPT']['show_on_front'] = 'page';
+foreach ($GLOBALS['POSTS'] as $i => $p) { $GLOBALS['POST_FIELD']["$i:post_modified_gmt"] = $p['gmt']; }
+$GLOBALS['META']['1002:rank_math_robots'] = ['noindex'];
+$a = Asite_Site_Sitemap::adresser('page');
+p('noindex-sider er ikke med', count($a) === 204);
+p('forsiden først (som Rank Math), med domænets adresse', $a[0][0] === home_url('/'));
+p('ellers nyest ændrede først', $a[1][1] >= $a[2][1] && $a[2][1] >= $a[50][1]);
+p('lastmod i UTC som Rank Math', (bool) preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00$/', $a[1][1]));
+$ix = Asite_Site_Sitemap::indeks();
+p('indeks: 200 pr. fil → page-sitemap.xml og page-sitemap2.xml', str_contains($ix, '/page-sitemap.xml</loc>') && str_contains($ix, '/page-sitemap2.xml</loc>') && !str_contains($ix, 'post-sitemap'));
+p('fil 2 har resten', substr_count((string) Asite_Site_Sitemap::fil('page', 2), '<url>') === 4 && Asite_Site_Sitemap::fil('page', 3) === null);
+p('/wp-sitemap.xml og /sitemap.xml → 301 til indekset', (Asite_Site_Sitemap::svar('/wp-sitemap.xml')[0] ?? 0) === 301
+    && (Asite_Site_Sitemap::svar('/sitemap.xml')[3] ?? '') === home_url('/sitemap_index.xml'));
+$GLOBALS['OPT']['rank-math-options-instant-indexing'] = ['indexnow_api_key' => 'd2f553f721ba4f13877c032bbb0612a2'];
+p('IndexNow: Rank Maths nøgle og nøglefil', Asite_Site_Sitemap::svar('/d2f553f721ba4f13877c032bbb0612a2.txt')[2] === 'd2f553f721ba4f13877c032bbb0612a2');
+p('andre adresser røres ikke', Asite_Site_Sitemap::svar('/kontakt/') === null && Asite_Site_Sitemap::svar('/local-sitemap.xml') === null);
+unset($GLOBALS['OPT']['page_on_front'], $GLOBALS['OPT']['show_on_front'], $GLOBALS['OPT']['rank-math-options-instant-indexing']);
+$GLOBALS['POSTS'] = []; $GLOBALS['META'] = [];
+saet();
 
 /* ---------- 9. Overgangen ---------- */
 echo "9. Overgangen fra mu-plugins\n";
