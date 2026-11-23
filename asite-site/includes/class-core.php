@@ -65,6 +65,10 @@ class Asite_Site {
             // Roller (hm-redaktoer + SVG-upload)
             'redaktoerlaas'     => true,      // Breakdances header/footer/skabeloner/blokke kun for administratorer
             'svg_upload'        => true,      // SVG i mediebiblioteket for administratorer (vores egne ikoner)
+            // Drift (class-drift.php; terrasse.nu 23-11-2026). Tomt/-1 = rør intet.
+            'mail_afsender'      => '',       // afsender i stedet for wordpress@… (kun når mailen ikke selv sætter From)
+            'mail_afsender_navn' => '',       // afsendernavn i stedet for »WordPress«
+            'revisioner'         => -1,       // revisioner pr. side (fx 5); -1 = WordPress' egen (ubegrænset)
             // Virksomheden i schema (flettes ind i Rank Maths Organization-node; i trin 2 skriver Asite Site selv grafen).
             // Kilden på et husmodel-site er registry/site-fakta.yaml (hm asite_site). Tomme felter skrives ikke.
             'virksomhed'        => [

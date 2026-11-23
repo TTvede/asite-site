@@ -12,7 +12,7 @@ $dir = rtrim($argv[1], '/') . '/';
 define('ASITE_SITE_VERSION', 'proeve');
 define('ASITE_SITE_DIR', $dir);
 define('ASITE_SITE_FILE', $dir . 'asite-site.php');
-foreach (['core', 'html', 'seo', 'meta', 'graf', 'sitemap', 'brodkrummer', 'seo-ui', 'lancering', 'roller', 'sporing', 'admin', 'updater'] as $k) {
+foreach (['core', 'html', 'seo', 'meta', 'graf', 'sitemap', 'brodkrummer', 'seo-ui', 'lancering', 'roller', 'sporing', 'drift', 'admin', 'updater'] as $k) {
     require $dir . "includes/class-$k.php";
 }
 
@@ -637,6 +637,22 @@ $GLOBALS['ADMIN'] = true;
 ob_start(); Asite_Site_Admin::side(); $siden = ob_get_clean();
 p('indstillingssiden tegnes med alle felterne',
     substr_count($siden, 'name="') > 25 && str_contains($siden, 'Klassepræfiks') && str_contains($siden, 'Sporing og leads'));
+
+// Drift (0.1.19): mailafsender og revisionsloft. Standard = rør intet; afsenderen skifter kun WordPress' egen.
+foreach (['wp_mail_from', 'wp_mail_from_name', 'wp_revisions_to_keep'] as $h) { remove_all_filters($h); }
+saet(); Asite_Site_Drift::init();
+p('drift: uden indstillinger røres mailafsender og revisioner ikke',
+    !has_filter('wp_mail_from') && !has_filter('wp_mail_from_name') && !has_filter('wp_revisions_to_keep'));
+saet(['mail_afsender' => 'info@test.invalid', 'mail_afsender_navn' => 'test.dk', 'revisioner' => 5]); Asite_Site_Drift::init();
+p('drift: wordpress@… bliver til den valgte afsender', apply_filters('wp_mail_from', 'wordpress@test.invalid') === 'info@test.invalid');
+p('drift: en mail, der selv sætter From, beholder den', apply_filters('wp_mail_from', 'salg@test.invalid') === 'salg@test.invalid');
+p('drift: »WordPress« bliver til det valgte navn, et eget navn bevares',
+    apply_filters('wp_mail_from_name', 'WordPress') === 'test.dk' && apply_filters('wp_mail_from_name', 'terrasse.nu') === 'terrasse.nu');
+p('drift: revisionsloftet er 5', apply_filters('wp_revisions_to_keep', -1, null) === 5);
+foreach (['wp_mail_from', 'wp_mail_from_name', 'wp_revisions_to_keep'] as $h) { remove_all_filters($h); }
+saet(['mail_afsender' => 'ikke en adresse']); Asite_Site_Drift::init();
+p('drift: en ugyldig afsender ignoreres', !has_filter('wp_mail_from'));
+saet();
 
 echo $fejl ? "\n$fejl FEJL\n" : "\nalt ok\n";
 exit($fejl ? 1 : 0);
